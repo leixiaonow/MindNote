@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<top.leixiao.mindnote.widget.RecordingLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:tag="recording">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/edit_recording_height"
+        android:layout_marginBottom="@dimen/edit_recording_bottom_margin"
+        android:layout_marginLeft="@dimen/edit_recording_horizontal_margin"
+        android:layout_marginRight="@dimen/edit_recording_horizontal_margin"
+        android:paddingLeft="0dp"
+        android:paddingRight="0dp"
+        android:background="@drawable/edit_record_unselect"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:weightSum="1">
+        <ImageView
+            android:id="@id/anim"
+            android:layout_width="0.0dip"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left"
+            android:layout_marginRight="0dp"
+            android:layout_marginLeft="0dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:layout_weight="0.6"
+            android:src="@drawable/recording_scaledrawable" />
+
+        <TextView
+            android:id="@id/time"
+            android:layout_width="0.0dip"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="0dp"
+            android:layout_marginLeft="0dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="5dp"
+            android:layout_weight="0.2"
+            android:gravity="right"
+            android:textColor="#ff000000"
+            android:textSize="14.0sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.2"
+            android:gravity="right"
+            android:layout_marginRight="0dp"
+            android:layout_marginLeft="0dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:weightSum="1">
+
+            <ImageView
+
+                android:id="@id/pause"
+                android:layout_width="0.0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:gravity="center"
+                android:paddingLeft="0dp"
+                android:paddingRight="5dp"
+                android:layout_marginLeft="0dp"
+                android:layout_marginRight="0dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/mz_ic_pause" />
+
+            <ImageView
+
+                android:id="@id/stop"
+                android:layout_width="0.0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:gravity="center"
+                android:paddingRight="5dp"
+                android:paddingLeft="0dp"
+                android:layout_marginLeft="0dp"
+                android:layout_marginRight="0dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/mz_ic_stop" />
+        </LinearLayout>
+    </LinearLayout>
+</top.leixiao.mindnote.widget.RecordingLayout>

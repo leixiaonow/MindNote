@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@id/toolBar"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/mz_action_bar_default_height"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <top.leixiao.mindnote.widget.EditTextCloud
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="@dimen/edit_text_margin"
+        android:layout_marginRight="@dimen/edit_text_margin"
+        android:background="@null"
+        android:hint="@string/edit_title"
+        android:imeOptions="actionNext"
+        android:includeFontPadding="false"
+        android:maxLength="100"
+        android:singleLine="true"
+        android:textColor="#cc000000"
+        android:textColorHint="@color/common_grey_color"
+        android:textSize="@dimen/edit_title_font_size" />
+
+</LinearLayout>

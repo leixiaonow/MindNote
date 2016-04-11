@@ -1,0 +1,34 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!--<item name="android:windowActionBarOverlay">true</item>-->
+        <item name="windowActionModeOverlay">true</item>
+    </style>
+
+    <style name="menu_labels_style">
+        <item name="android:background">@drawable/fab_label_background</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <!-- 魅族的-->
+
+    <style name="Widget.DeviceDefault.Light.EditText.Dialog" parent="@android:style/Widget.DeviceDefault.Light.EditText">
+        <item name="android:textSize">@dimen/mz_alert_dialog_edittext_text_size</item>
+        <item name="android:textColor">@color/mz_alert_dialog_edittext_text_color</item>
+        <item name="android:gravity">bottom</item>
+        <item name="android:paddingLeft">@dimen/mz_alert_dialog_edittext_inner_padding_left</item>
+        <item name="android:paddingBottom">@dimen/mz_alert_dialog_edittext_inner_padding_bottom</item>
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/mz_alert_dialog_edittext_height</item>
+        <item name="android:singleLine">false</item>
+        <item name="android:lineSpacingExtra">@dimen/mz_alert_dialog_edittext_line_spacing</item>
+    </style>
+
+    <style name="RippleEffect">
+        <item name="android:background">@drawable/chick_effect_bg_dw</item>
+    </style>
+
+
+</resources>

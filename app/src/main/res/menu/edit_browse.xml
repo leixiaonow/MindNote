@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+    <item android:icon="@drawable/mz_sb_share" android:id="@id/menu_share" android:title="@string/menu_share" app:showAsAction="always" />
+    <item android:icon="@drawable/mz_sb_delete" android:id="@id/menu_delete_browse" android:title="@string/menu_delete" app:showAsAction="always" />
+    <item android:id="@id/menu_top" android:title="@string/menu_top" android:checkable="true" app:showAsAction="never" />
+    <item android:id="@id/menu_change_paper" android:title="@string/menu_change_paper" app:showAsAction="never" />
+    <item android:id="@id/menu_desktop" android:title="@string/send_to_desktop" android:checkable="true" app:showAsAction="never" />
+    <item android:id="@id/menu_float" android:visible="false" android:title="@string/menu_float" app:showAsAction="never" />
+    <item android:id="@id/menu_encrypt" android:visible="false" android:title="@string/menu_encrypt" app:showAsAction="never" />
+    <item android:id="@id/menu_export_pic" android:visible="false" android:title="@string/menu_export_pic" app:showAsAction="never" />
+    <item android:id="@id/menu_export" android:visible="false" android:title="@string/menu_export" app:showAsAction="never">
+        <menu>
+            <item android:id="@id/submenu_export_pic" android:title="@string/menu_export_pic" app:showAsAction="always" />
+            <item android:id="@id/submenu_export_text" android:title="@string/menu_export_text" app:showAsAction="always" />
+        </menu>
+    </item>
+</menu>

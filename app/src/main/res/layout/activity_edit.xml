@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/edit_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <top.leixiao.mindnote.widget.CustomScrollView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/scroll_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/edit_toolbar"
+        android:layout_weight="1.0"
+        android:clipToPadding="false"
+        android:fadingEdge="none"
+        android:fitsSystemWindows="true"
+        android:focusable="false"
+        android:focusableInTouchMode="true"
+        android:overScrollMode="always"
+        android:layout_above="@+id/include">
+
+        <FrameLayout
+            android:id="@id/frame_parent"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@id/parent"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <include layout="@layout/edit_title" />
+
+                <LinearLayout
+                    android:id="@id/edit_parent"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/edit_text_top_margin" />
+
+                <View
+                    android:id="@id/empty"
+                    android:layout_width="fill_parent"
+                    android:layout_height="0.0dip"
+                    android:layout_weight="0.99" />
+
+                <ImageView
+                    android:id="@id/divider"
+                    android:layout_width="fill_parent"
+                    android:layout_height="1.0px"
+                    android:layout_marginLeft="@dimen/edit_divider_horizontal_margin"
+                    android:layout_marginRight="@dimen/edit_divider_horizontal_margin"
+                    android:layout_marginTop="@dimen/edit_divider_top_margin"
+                    android:background="#33000000"
+                    android:tag="divider" />
+
+                <include layout="@layout/edit_last_modify" />
+
+            </LinearLayout>
+        </FrameLayout>
+    </top.leixiao.mindnote.widget.CustomScrollView>
+
+    <include layout="@layout/new_note_activity_footer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/include" />
+
+</RelativeLayout>

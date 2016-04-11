@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@id/editParent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/edit_text_margin"
+    android:paddingRight="@dimen/edit_text_margin"
+    android:paddingBottom="20dp"
+    android:orientation="horizontal"
+    android:tag="text"
+    android:gravity="top">
+
+
+    <top.leixiao.mindnote.widget.CheckImageView
+        android:id="@id/check"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="start"
+        android:layout_marginRight="5dp"
+        android:src="@null"
+        android:scaleType="centerInside"
+        android:visibility="visible" />
+
+    <top.leixiao.mindnote.widget.NoteEditText
+        android:id="@+id/text"
+        android:layout_width="0.0dip"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.0"
+        android:autoLink="all"
+        android:autoText="true"
+        android:background="@null"
+        android:capitalize="sentences"
+        android:focusable="true"
+        android:includeFontPadding="false"
+        android:lineSpacingExtra="@dimen/edit_text_line_space"
+        android:linksClickable="true"
+        android:maxLength="20000"
+        android:minLines="1"
+        android:textColor="#ff000000"
+        android:textColorHint="@color/common_grey_color"
+        android:textSize="@dimen/edit_text_font_size"
+        android:visibility="visible" />
+
+    <top.leixiao.mindnote.widget.DeleteImageView
+        android:id="@id/delete"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="end"
+        android:scaleType="centerInside"
+        android:src="@drawable/mz_ic_delete"
+        android:visibility="visible" />
+</LinearLayout>
