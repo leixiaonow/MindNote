@@ -23,7 +23,6 @@ public class TempFileProvider extends ContentProvider {
     private static final int MMS_SCRAP_SPACE = 1;
     private static final UriMatcher sURLMatcher = new UriMatcher(-1);
     private static String TAG = "TempFileProvider";
-
     static {
         sURLMatcher.addURI(AUTHORITY, "scrapSpace", MMS_SCRAP_SPACE);
     }

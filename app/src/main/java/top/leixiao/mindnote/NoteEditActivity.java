@@ -138,6 +138,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private static final int REQUEST_CODE_VERIFY = 5;
     private static final String TAG = "NoteEditActivity";
     private static final int IMAGE_WIDTH = 800;
+    private static final int REQUEST_CODE_PICK_CAPTURE = 6;
     private static String sLastExportPicDirPath = null;
     private static String sLastExportTextDirPath = null;
     private static String sLastInsertDirPath = null;
@@ -149,64 +150,38 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     final int STATE_PAUSE_DELETE = REQUEST_CODE_SHARING;
     final int STATE_PAUSE_INSERT = REQUEST_CODE_EXPORT_TO_TEXT;
     final int STATE_PAUSE_SWITCH_TO_BACK = REQUEST_CODE_LOGIN;
-    int mChanged = 0;
-    //正在编辑页面显示的笔记
-    NoteData mEditNote;
-    //所有笔记元素的父容器
-    LinearLayout mEditParent;
-    //第一张图片的路径？？名称？？
-    String mFirstImg;
-    //第一个录音的路径？？名称？？
-    String mFirstRecord;
-    //第一个TextView
-    TextView mFirstTextView;
-    //当前得到焦点的NoteEditText文字元素
-    NoteEditText mFocusNoteEditText;
-    //灰色值
-    int mGreyColor;
-    //？？？
-    Object mIMEListener;
-    ImageView mImageColorView;
-    //初始化是否完成？？？
-    boolean mInitOK = false;
-    //不知道？？
-    boolean mIsCapture;
-    //软键盘是否打开
-    boolean mIsSoftInuptShow = false;
-    //启动时间
-    long mLaunchTime;
-    //暂停状态？？
-    int mPauseState = REQUEST_CODE_LOGIN;
-    ListPopupWindow mPopup;
-    //位置？？什么位置？？
-    int mPosition;
-    //进度窗口
-    ProgressDialog mProgressDialog;
-    //录音水平和竖直间隔
-    int mRecordHorizontalMargin;
-    int mRecordVerticalMargin;
-    //录音布局
-    RecordingLayout mRecordingLayoutView;
-    //重做图片
-    ImageView mRedoView;
-    //滚动器，最外层控件
-    ScrollView mScrollView;
-    //分享时传递的Intent
-    Intent mShareIntent;
-    //如键盘是否显示的标识
-    boolean mSoftInputShown = false;
-    //tag编辑器，实际是文本编辑框
-    EditText mTagEditor;
-    //Tag列表
-    ArrayList<TagInfo> mTagList = new ArrayList();
-    //Tag下拉菜单
-    Spinner mTagSpinner;
-    //尾巴textVeiw，用来显示时间
-    TextView mTailView;
-    //文本颜色
-    int mTextColor;
+    public int mChanged = 0;//标识改变了那些
+    public NoteData mEditNote;//正在编辑页面显示的笔记
+    public LinearLayout mEditParent;//所有笔记元素的父容器
+    public String mFirstImg;//第一张图片的名称,是唯一的
+    public String mFirstRecord;//第一个录音的名称，是唯一的
+    public TextView mFirstTextView; //第一个TextView
+    public NoteEditText mFocusNoteEditText;//当前获得焦点的NoteEditText文字元素
+    public int mGreyColor;//灰色值，文字颜色
+    public Object mIMEListener;//？？？
+    public boolean mInitOK = false;//初始化是否完成？？？
+    public boolean mIsCapture;//不知道？？
+    public boolean mIsSoftInuptShow = false;//软键盘是否打开
+    public long mLaunchTime;//启动时间
+    public int mPauseState = REQUEST_CODE_LOGIN;//暂停状态？？
+    public ListPopupWindow mPopup;
+    public int mPosition; //位置？？什么位置？？
+    public ProgressDialog mProgressDialog;  //进度窗口
+    public int mRecordHorizontalMargin;//录音水平和竖直间隔
+    public int mRecordVerticalMargin;
+    public RecordingLayout mRecordingLayoutView;//录音布局
+    public ScrollView mScrollView; //滚动器，最外层控件
+    public Intent mShareIntent; //分享时传递的Intent
+    public boolean mSoftInputShown = false;//如键盘是否显示的标识
+    public EditText mTagEditor;//tag编辑器，实际是文本编辑框
+    public ArrayList<TagInfo> mTagList = new ArrayList();//Tag列表
+    public Spinner mTagSpinner;//Tag下拉菜单
+    public TextView mTailView; //尾巴textVeiw，用来显示时间
+    public TextView mSignature; //尾巴签名，用来显示签名
+    public int mTextColor;//文本颜色
+
     //CheckImageView 的监听事件
-    OnClickListener mCheckClickListener = new OnClickListener() {
+    public OnClickListener mCheckClickListener = new OnClickListener() {
         public void onClick(View v) {
             if (v instanceof CheckImageView) {
                 NoteEditText text = (NoteEditText) ((ViewGroup) v.getParent()).findViewById(R.id.text);
@@ -226,20 +201,16 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-    LinearLayout mTitleFontBack;
-    //toolbar工具栏
-    LinearLayout mTitleToolBar;
-    //标题栏
-    EditTextCloud mTitleView;
-    //类型，
-    int mType;
-    //笔记的图片元素
-    RichFrameLayout mViewImageItem;
-    //宽度？？什么的宽度
-    int mWidth;
+
+
+    public EditTextCloud mTitleView;//标题栏
+    public int mType;//显示类型，导出图片或文字或编辑类型
+    public RichFrameLayout mViewImageItem;//笔记的图片元素
+    public int mWidth;//宽度？？界面宽度的宽度？
     private Button mButtonSave = null;//保存按钮????
+
     //文本监听器
-    TextWatcher mTextWatch = new TextWatcher() {
+    public TextWatcher mTextWatch = new TextWatcher() {
         public void afterTextChanged(Editable editable) {
             if (NoteEditActivity.this.mButtonSave != null) {
                 if (editable.length() <= 0 || TextUtils.isEmpty(editable.toString().trim())) {
@@ -256,9 +227,11 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         public void onTextChanged(CharSequence s, int start, int before, int count) {
         }
     };
-    private int mCount = 0;
+    public  int mCount = 0;
+
+
     //删除 点击 的监听 deleteImageView调用？？？
-    OnClickListener mDeleteClickListener = new OnClickListener() {
+    public OnClickListener mDeleteClickListener = new OnClickListener() {
         public void onClick(View v) {
             View parentView = (View) v.getParent();
             if (parentView != null) {
@@ -322,20 +295,17 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-    //存储NoteItem的列表，文字，图片，和声音
-    private ArrayList<NoteItem> mDataList = new ArrayList();
-    //删除文件列表
-    private HashSet<String> mDeleteFilesList;
-    //桌面显示的标签？？
-    private boolean mFloatFlag = false;
-    //当前光标焦点？？？
-    private int mFocusId = -2;
-    //分类切换开关
-    private boolean mGroupSwitch = true;
-    //多线程
-    private Handler mHandler = new Handler();
+
+
+    private ArrayList<NoteItem> mDataList = new ArrayList<>();//存储NoteItem的列表，文字，图片，和声音
+    private HashSet<String> mDeleteFilesList;//删除文件列表
+    private boolean mFloatFlag = false;//桌面显示的标签？？
+    private int mFocusId = -2;//当前光标焦点？？？
+    private boolean mGroupSwitch = true;//分类切换开关
+    private Handler mHandler = new Handler();//多线程
+
     //界面更新Handler
-    Handler mUiHandler = new Handler() {
+    public Handler mUiHandler = new  Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case NoteEditActivity.REQUEST_CODE_PICK /*0*/:
@@ -376,6 +346,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
+
     private MenuItem mMenuDelete;//删除
     private MenuItem mMenuDesktop;//显示到桌面
     private MenuItem mMenuExport;//导出
@@ -388,6 +359,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private MenuItem mMenuRecord;//录音
     private MenuItem mMenuShare;//分享
     private MenuItem mMenuTop;//置顶
+
     //键盘监听
     public OnKeyListener mEditKeyPreListener = new OnKeyListener() {
         @Override
@@ -401,8 +373,9 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             return false;
         }
     };
-    //新标签？？
-    private boolean mNewFlag = false;
+
+    private boolean mNewFlag = false;//新标签？？
+
     //什么监听？？根据实验，如果记事本既没有标题，又没有内容，或只有一个文字元素，且为空时
     //按返回键后，直接退出编辑界面，返回笔记列表界面，且不保存，或将已有笔记删除
     private EditTextCloud.OnKeyPreImeListener mOnKeyPreImeListener = new EditTextCloud.OnKeyPreImeListener() {
@@ -420,12 +393,13 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             return false;
         }
     };
-    //请求码
-    private int mRequestCode = -1;
-    //广播接收器
-    private BroadcastReceiver mScreenOffAndHomeReceiver = null;
-    //选择开始处
-    private int mSelectStart = -1;
+
+    private int mRequestCode = -1; //请求码
+
+    private BroadcastReceiver mScreenOffAndHomeReceiver = null; //广播接收器
+
+    private int mSelectStart = -1;//选择开始处
+
     //时间改变广播接收器
     private BroadcastReceiver mTimeChangedReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -456,7 +430,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-    private boolean mWidgetJump;
+
     //电话状态监听器
     private PhoneStateListener phoneStateListener = new PhoneStateListener() {
         public void onCallStateChanged(int state, String incomingNumber) {
@@ -472,26 +446,22 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-    //电话管理器
-    private TelephonyManager telephonyManager;
+
+    private TelephonyManager telephonyManager;//电话管理器
     private Toolbar edit_toolbar;
-
-
     private View mSelectBill;
     private View mSelectCamera;
     private View mSelectGallery;
     private View mSelectLabel;
     private View mSelectRecord;
     private View mSelectReminder;
+    private boolean mWidgetJump;
+
 
     //入口
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit);//加载布局
-
-        if (!this.mGroupSwitch) {
-            findViewById(R.id.tag).setVisibility(View.GONE);
-        }
 
         this.mSelectBill = findViewById(R.id.action_bill);
         this.mSelectLabel = findViewById(R.id.action_label);
@@ -583,7 +553,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
     void setTopBlurEffect() {
-        ActionBar actionBar = getActionBar();
         int color = Color.GREEN | (ViewCompat.MEASURED_SIZE_MASK & NoteUtil.getBackgroundColor(this.mEditNote != null ? this.mEditNote.mPaper : REQUEST_CODE_PICK));
         BlurDrawable bd = new BlurDrawable();
         bd.setColorFilter(color, BlurDrawable.DEFAULT_BLUR_COLOR_MODE);
@@ -610,11 +579,11 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 //            actionBar.setSplitBackgroundDrawable(ld);
             return;
         }
-        int color = -436207616 | (ViewCompat.MEASURED_SIZE_MASK & NoteUtil.getBackgroundColor(this.mEditNote.mPaper));
+        int color = 0xe6000000 | (ViewCompat.MEASURED_SIZE_MASK & NoteUtil.getBackgroundColor(this.mEditNote.mPaper));
         BlurDrawable bd = new BlurDrawable();
         bd.setColorFilter(color, BlurDrawable.DEFAULT_BLUR_COLOR_MODE);
-        ColorDrawable cd = new ColorDrawable(167772160);
-        ColorDrawable cd2 = new ColorDrawable(855638016);
+        ColorDrawable cd = new ColorDrawable(0xa000000);
+        ColorDrawable cd2 = new ColorDrawable(0x33000000);
         Drawable[] drawableArr2 = new Drawable[REQUEST_CODE_SHARING];
         drawableArr2[REQUEST_CODE_PICK] = bd;
         drawableArr2[REQUEST_CODE_EXPORT_TO_PIC] = cd;
@@ -841,49 +810,16 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //初始化一些View，好几把长
     public void initContentView() {
         Intent intent = getIntent();
-        //得到传入的位置
-        this.mPosition = intent.getIntExtra("pos", -1);
-        //得到传入的id，笔记的id
-        long id = intent.getLongExtra("id", -1);
-        //得到笔记的唯一路径，ContentProvider需要
-        Uri noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, id);
-        //得到传入的mtype
-        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -1);
-        //得到传入的mWidgetJump
-        this.mWidgetJump = intent.getBooleanExtra("widgetJumpFlag", false);
-        //得到传入的mFocusId，光标位置？？
-        this.mFocusId = intent.getIntExtra("focus", -2);
-        //得到传入的mSelectStart
-        this.mSelectStart = intent.getIntExtra("select", -1);
-        //得到传入的mNewFlag，新建笔记标签吗？？
-        this.mNewFlag = intent.getBooleanExtra("creating", false);
-        //得到widgetJumpView
-        boolean widgetJumpView = intent.getBooleanExtra("widgetJumpView", false);
-
-        //发送一些什么鬼？？
-        if (this.mWidgetJump || widgetJumpView) {
-            switch (this.mType) {
-                case NoteUtil.EDIT_TYPE_UPDATE /*-5*/:
-/*//                    MobEventUtil.onSendMobEvent(this, "entry_to_notes", "preview");
-                    break;
-                case NoteUtil.EDIT_TYPE_CAMERA *//*-4*//*:
-//                    MobEventUtil.onSendMobEvent(this, "entry_to_notes", "picture");
-                    break;
-                case NoteUtil.EDIT_TYPE_RECORD *//*-3*//*:
-//                    MobEventUtil.onSendMobEvent(this, "entry_to_notes", "voice");
-                    break;
-                case NoteUtil.EDIT_TYPE_LIST *//*-2*//*:
-//                    MobEventUtil.onSendMobEvent(this, "entry_to_notes", "list");
-                    break;
-                case DragShadowBuilderMz.STATE_IDLE *//*-1*//*:
-//                    MobEventUtil.onSendMobEvent(this, "widget_to_normal_new", "null");
-                    break;*/
-            }
-        }
-
-        Log.d(TAG, "type : " + this.mType);
-        //得到标签tag
-        long tag = intent.getLongExtra("tag", -1);
+        this.mPosition = intent.getIntExtra("pos", -1);//得到传入的位置
+        long id = intent.getLongExtra("id", -1);//得到传入的id，笔记的id
+        Uri noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, id);//得到笔记的唯一路径，ContentProvider需要
+        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -1);//得到传入的mtype
+        this.mWidgetJump = intent.getBooleanExtra("widgetJumpFlag", false);//得到传入的mWidgetJump
+        this.mFocusId = intent.getIntExtra("focus", -2);//得到传入的mFocusId，光标位置？？
+        this.mSelectStart = intent.getIntExtra("select", -1);//得到传入的mSelectStart
+        this.mNewFlag = intent.getBooleanExtra("creating", false);//得到传入的mNewFlag，新建笔记标签吗？？
+        boolean widgetJumpView = intent.getBooleanExtra("widgetJumpView", false);//得到widgetJumpView
+        long tag = intent.getLongExtra("tag", -1);//得到标识tag
         //如果传入的标签<=-1，新建笔记？？？
         if (id <= -1) {
             if (this.mEditNote == null) {
@@ -891,23 +827,17 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 this.mEditNote = new NoteData();//新建笔记
                 this.mEditNote.mUUId = generateUUId();//设置uuid
             }
-            //设置位置mPosition
-            this.mPosition = -1;
-            //设置mEditNote.mId
-            this.mEditNote.mId = -1;
-            //设置tag
-            this.mEditNote.mTag = tag;
+            this.mPosition = -1; //设置位置mPosition
+            this.mEditNote.mId = -1;//设置mEditNote.mId
+            this.mEditNote.mTag = tag;//设置tag
             //判断加密
             if (TagData.FUN_ENCRYPT && tag == -2) {
                 this.mEditNote.mEncrypt = true;
                 this.mChanged |= CHANGE_ENCRYPT;
             }
-            //设置置顶时间为0
-            this.mEditNote.mTopTime = 0;
-            //设置创建时间
-            this.mEditNote.mCreateTime = System.currentTimeMillis();
-            //新建笔记设为true
-            this.mNewFlag = true;
+            this.mEditNote.mTopTime = 0; //设置置顶时间为0
+            this.mEditNote.mCreateTime = System.currentTimeMillis();//设置创建时间
+            this.mNewFlag = true;//新建笔记设为true
         } else {
             //不是新建笔记的情况
             //重数据库读出笔记
@@ -921,10 +851,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 finish();
                 return;
             }
-            //cursor光标移到开头
-            cursor.moveToFirst();
-            //解析cursor内容
-            this.mEditNote = NoteData.getItem(cursor);
+            cursor.moveToFirst();//cursor光标移到开头
+            this.mEditNote = NoteData.getItem(cursor);//解析cursor内容
             cursor.close();
         }
 
@@ -936,17 +864,12 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         LinearLayout contentParent = (LinearLayout) this.mScrollView.findViewById(R.id.parent);
         //得到mEditParent
         this.mEditParent = (LinearLayout) contentParent.findViewById(R.id.edit_parent);
-        //设置mFirstImg
-        this.mFirstImg = this.mEditNote.mFirstImg;
-        //设置mFirstRecord
-        this.mFirstRecord = this.mEditNote.mFirstRecord;
+        this.mFirstImg = this.mEditNote.mFirstImg;//设置mFirstImg
+        this.mFirstRecord = this.mEditNote.mFirstRecord;//设置mFirstRecord
         //得到lastTimeView
         LinearLayout lastTimeView = (LinearLayout) contentParent.findViewById(R.id.last_parent);
 
-
-        //重点来了
-        initEditLayout();
-
+        initEditLayout();//重点来了
 
         initTitle();
 
@@ -2993,14 +2916,15 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     //当点击添加图片按钮时，打开图片获取页面，选择图片后返回，在onActivityResult中处理
     void onInsertImage() {
+        //隐藏键盘
         InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), REQUEST_CODE_PICK);
         }
+
         findFocusView();
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
+        Intent intent = new Intent(Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.addFlags(AccessibilityEventCompat.TYPE_GESTURE_DETECTION_END);
         intent.putExtra("output", TempFileProvider.SCRAP_CONTENT_URI);
         if (!TextUtils.isEmpty(sLastInsertDirPath)) {
@@ -3008,7 +2932,22 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         }
         Intent resultIntent = Intent.createChooser(intent, getResources().getText(R.string.insert_pic_title));
         this.mPauseState = REQUEST_CODE_EXPORT_TO_TEXT;
-        startActivityForResult(resultIntent, REQUEST_CODE_PICK);
+        startActivityForResult(resultIntent, REQUEST_CODE_PICK_CAPTURE);
+    }
+
+
+    public void TakePhotos() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), REQUEST_CODE_PICK);
+        }
+        findFocusView();
+        Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+        intent.putExtra("output", TempFileProvider.SCRAP_CONTENT_URI);
+        if (!TextUtils.isEmpty(sLastInsertDirPath)) {
+            intent.putExtra("init_directory", sLastInsertDirPath);
+        }
+        startActivityForResult(intent, REQUEST_CODE_PICK_CAPTURE);
     }
 
     @Override
@@ -3157,36 +3096,18 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         if (resultCode == -1) {
             Log.d(TAG, "onActivityResult: resultCode==-1");
             Uri uri = null;
-
             switch (requestCode) {
                 //加载图片的情况
                 case REQUEST_CODE_PICK /*0*/:
-                    Log.d(TAG, "onActivityResult: requestCode=0");
                     if (data != null) {
                         uri = data.getData();
-                        Log.d(TAG, "onActivityResult: " + uri);
-                        //从相册加载图片不满足下面的条件
-                        if (uri != null && uri.getAuthority().equals(TempFileProvider.AUTHORITY)) {
-                            Log.d(TAG, "onActivityResult: equals(TempFileProvider.AUTHORITY)");
-                            uri = Uri.fromFile(TempFileProvider.getScrapPath(this));
-                            Log.d(TAG, "onActivityResult: Uri.fromFile" + uri);
-                        } else if (uri.getScheme().equals("file")) {
-                            Log.d(TAG, "onActivityResult: equals(\"file\")");
-                            String path = uri.getPath();
-                            sLastInsertDirPath = path.substring(REQUEST_CODE_PICK, path.lastIndexOf(File.separatorChar));
-                            if (isLockDir(sLastInsertDirPath)) {
-                                sLastInsertDirPath = null;
-                            }
-                        }
+                        Log.d(TAG, "onActivityResult: uri:"+uri);
                     }
-                    //不论怎么获得图片都要执行这里，根据uri执行一些操作
                     if (uri != null) {
-                        Log.d(TAG, "onActivityResult: uri!=null");
                         //保存图片到引用文件夹
                         String picName = addImage(this, uri, this.mEditNote.mUUId);
                         if (picName != null) {
-                            //插入图片元素到笔记上
-                            insertImage(picName);
+                            insertImage(picName); //插入图片元素到笔记上
                             break;
                         }
                         return;
@@ -3232,11 +3153,18 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     break;
                 case REQUEST_CODE_LOGIN /*4*/:
                 case REQUEST_CODE_VERIFY /*5*/:
-//                    MobEventUtil.onSendMobEvent(this, "move_to_encrypt", null);
                     this.mEditNote.mEncrypt = true;
                     this.mEditNote.mDesktop = REQUEST_CODE_PICK;
                     this.mChanged |= CHANGE_ENCRYPT;
                     this.mChanged |= REQUEST_CODE_LOGIN;
+                    break;
+                case REQUEST_CODE_PICK_CAPTURE/*6*/:
+                    Log.d(TAG, "onActivityResult: uri:"+TempFileProvider.SCRAP_CONTENT_URI);
+                    String picName = addImage(this, TempFileProvider.SCRAP_CONTENT_URI, this.mEditNote.mUUId);
+                    if (picName != null) {
+                        insertImage(picName); //插入图片元素到笔记上
+                        break;
+                    }
                     break;
             }
             super.onActivityResult(requestCode, resultCode, data);
@@ -4128,7 +4056,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                             }
                         }
                     }
-//                    MobEventUtil.onSendMobEvent(this, "click_picture_button", null);
                     onInsertImage();
                     break;
                 }
@@ -4575,29 +4502,29 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                             }
                         }
                     }
-//                    MobEventUtil.onSendMobEvent(this, "click_picture_button", null);
-                    onInsertImage();
+                    TakePhotos();
                     break;
                 }
                 return;
             case R.id.action_gallery:
-                if ((this.mRecordingLayoutView == null || !this.mRecordingLayoutView.isRecording()) && checkSdcardOK()) {
-                    count = this.mEditParent.getChildCount();
-                    int picCount = 0;
-                    for (index = 0; index < count; index += 1) {
-                        if ("image".equals(this.mEditParent.getChildAt(index).getTag())) {
-                            picCount += 1;
-                            if (picCount >= 10) {
-                                Toast.makeText(this, R.string.image_limit_tip, REQUEST_CODE_PICK).show();
-                                return ;
-                            }
-                        }
-                    }
-//                    MobEventUtil.onSendMobEvent(this, "click_picture_button", null);
-                    onInsertImage();
-                    break;
+
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), REQUEST_CODE_PICK);
                 }
-                return;
+                findFocusView();
+                Intent intent = new Intent(Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                intent.addFlags(AccessibilityEventCompat.TYPE_GESTURE_DETECTION_END);
+                intent.putExtra("output", TempFileProvider.SCRAP_CONTENT_URI);
+                if (!TextUtils.isEmpty(sLastInsertDirPath)) {
+                    intent.putExtra("init_directory", sLastInsertDirPath);
+                }
+                Intent resultIntent = Intent.createChooser(intent, getResources().getText(R.string.insert_pic_title));
+                this.mPauseState = REQUEST_CODE_EXPORT_TO_TEXT;
+                startActivityForResult(resultIntent, REQUEST_CODE_PICK);
+                break;
+
             case R.id.action_label:
                 return;
             case R.id.action_recorde:
