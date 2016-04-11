@@ -6,30 +6,29 @@
     android:layout_marginLeft="@dimen/edit_last_horizontal_margin"
     android:layout_marginRight="@dimen/edit_last_horizontal_margin"
     android:gravity="center_vertical"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:tag="last_modify">
 
     <TextView
-        android:id="@id/last_modify"
-        android:layout_width="wrap_content"
+        android:id="@+id/signature"
+        android:text="雷枭"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clickable="false"
         android:focusable="false"
-        android:gravity="left"
+        android:gravity="end"
         android:textColor="#80000000"
         android:textSize="@dimen/edit_last_modify_font_size" />
 
-    <View
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1.0" />
+    <TextView
+        android:id="@id/last_modify"
+        android:text="2016-4-11 00:00"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clickable="false"
+        android:focusable="false"
+        android:gravity="end"
+        android:textColor="#80000000"
+        android:textSize="@dimen/edit_last_modify_font_size" />
 
-    <Spinner
-        android:id="@id/tag"
-        android:layout_width="wrap_content"
-        android:layout_height="20.0dip"
-        android:drawSelectorOnTop="true"
-        android:dropDownVerticalOffset="-22.0dip"
-        android:gravity="right"
-        android:spinnerMode="dropdown" />
 </LinearLayout>

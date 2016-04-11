@@ -535,4 +535,14 @@
     <dimen name="widget_text_top_margin">16.0dip</dimen>
     <dimen name="widget_title_divider_margin">14.0dip</dimen>
     <dimen name="widget_top_margin">1.5999756dip</dimen>
+
+
+
+
+    <!--aminote-->
+    <dimen name="edit_note_item_margin">20dp</dimen>
+    <dimen name="edit_note_label_item_horizon_margin">11dp</dimen>
+    <dimen name="edit_note_label_item_vertical_margin">9dp</dimen>
+
+
 </resources>

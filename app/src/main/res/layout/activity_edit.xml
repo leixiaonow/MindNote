@@ -40,6 +40,24 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <LinearLayout
+                    android:id="@+id/new_note_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <top.leixiao.mindnote.widget.EditLabelView
+                        android:id="@+id/new_note_label_content"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content" />
+
+                    <View
+                        android:layout_width="fill_parent"
+                        android:layout_height="2.0px"
+                        android:background="@color/note_edit_text_line_color" />
+                </LinearLayout>
+
                 <include layout="@layout/edit_title" />
 
                 <LinearLayout
@@ -52,7 +70,7 @@
                 <View
                     android:id="@id/empty"
                     android:layout_width="fill_parent"
-                    android:layout_height="0.0dip"
+                    android:layout_height="fill_parent"
                     android:layout_weight="0.99" />
 
                 <ImageView
@@ -73,7 +91,7 @@
 
     <include layout="@layout/new_note_activity_footer_layout"
         android:layout_width="match_parent"
-        android:layout_height="54dp"
+        android:layout_height="50dp"
         android:layout_alignParentBottom="true"
         android:id="@+id/include" />
 

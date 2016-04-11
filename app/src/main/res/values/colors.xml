@@ -120,4 +120,8 @@
     <color name="translucent_background">#00000000</color>
     <color name="transparent">#00000000</color>
     <color name="white">#ffffffff</color>
+
+
+    <color name="note_edit_text_line_color">#36bca47e</color>
+
 </resources>
