@@ -6,6 +6,7 @@ import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -75,6 +76,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,6 +98,7 @@ import top.leixiao.mindnote.utils.EnvironmentUtils;
 import top.leixiao.mindnote.utils.HanziToPinyin;
 import top.leixiao.mindnote.utils.ImageUtil;
 import top.leixiao.mindnote.utils.InputMethodManagerUtils;
+import top.leixiao.mindnote.utils.LunarCalendar;
 import top.leixiao.mindnote.utils.NoteUtil;
 import top.leixiao.mindnote.utils.ReflectUtils;
 import top.leixiao.mindnote.utils.ScrollViewUtils;
@@ -115,7 +118,7 @@ import top.leixiao.mindnote.widget.ScaleImageView;
 
 //import top.leixiao.mindnote.database.NotePaper.NoteFiles;
 
-public class NoteEditActivity extends RecordActivityBase implements OnClickListener{
+public class NoteEditActivity extends RecordActivityBase implements OnClickListener {
     public static final int MAX_WORDS = 20000;
     public static final int MSG_SHARE_START = 0x0;
     private static final int CHANGE_CONTENT = 0x10;
@@ -195,7 +198,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public int mType;//显示类型，导出图片或文字或编辑类型
     public RichFrameLayout mViewImageItem;//笔记的图片元素
     public int mWidth;//宽度？？界面宽度的宽度？
-    public  int mCount = 0;
+    public int mCount = 0;
 
     //删除 点击 的监听 deleteImageView调用？？？
     public OnClickListener mDeleteClickListener = new OnClickListener() {
@@ -262,15 +265,25 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-
-
+    //键盘监听
+    public OnKeyListener mEditKeyPreListener = new OnKeyListener() {
+        @Override
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
+            if (event.getAction() == 0 && keyCode == 66) {
+                return NoteEditActivity.this.onKeyEnter();
+            }
+            if (event.getAction() == 0 && keyCode == 67) {
+                return NoteEditActivity.this.onKeyDel();
+            }
+            return false;
+        }
+    };
     private ArrayList<NoteItem> mDataList = new ArrayList<>();//存储NoteItem的列表，文字，图片，和声音
     private HashSet<String> mDeleteFilesList;//删除文件列表
     private int mFocusId = -2;//当前光标焦点？？？
     private Handler mHandler = new Handler();//多线程
-
     //界面更新Handler
-    public Handler mUiHandler = new  Handler() {
+    public Handler mUiHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case NoteEditActivity.REQUEST_CODE_PICK /*0*/:
@@ -311,7 +324,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-
     private MenuItem mMenuDelete;//删除
     private MenuItem mMenuDesktop;//显示到桌面
     private MenuItem mMenuExport;//导出
@@ -323,22 +335,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private MenuItem mMenuRecord;//录音
     private MenuItem mMenuShare;//分享
     private MenuItem mMenuTop;//置顶
-
-    //键盘监听
-    public OnKeyListener mEditKeyPreListener = new OnKeyListener() {
-        @Override
-        public boolean onKey(View v, int keyCode, KeyEvent event) {
-            if (event.getAction() == 0 && keyCode == 66) {
-                return NoteEditActivity.this.onKeyEnter();
-            }
-            if (event.getAction() == 0 && keyCode == 67) {
-                return NoteEditActivity.this.onKeyDel();
-            }
-            return false;
-        }
-    };
-
-
     //什么监听？？根据实验，如果记事本既没有标题，又没有内容，或只有一个文字元素，且为空时
     //按返回键后，直接退出编辑界面，返回笔记列表界面，且不保存，或将已有笔记删除
     private EditTextCloud.OnKeyPreImeListener mOnKeyPreImeListener = new EditTextCloud.OnKeyPreImeListener() {
@@ -360,7 +356,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private int mRequestCode = -1; //请求码
     private BroadcastReceiver mScreenOffAndHomeReceiver = null; //广播接收器
     private int mSelectStart = -1;//选择开始处
-    private boolean mNewFlag=false;
+    private boolean mNewFlag = false;
     //时间改变广播接收器
 
     private BroadcastReceiver mTimeChangedReceiver = new BroadcastReceiver() {
@@ -414,7 +410,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private LinearLayout mlastTimeView;
 
     private ArrayList<Integer> mSelectLabelIds = new ArrayList<>();
-    private ArrayList<Integer> mLabel=new ArrayList<>();
+    private ArrayList<Integer> mLabel = new ArrayList<>();
     private ViewGroup mLabelContent;
     private LinearLayout mLabelView;
 
@@ -469,7 +465,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         this.mEditParent = (LinearLayout) contentParent.findViewById(R.id.edit_parent);
         this.mlastTimeView = (LinearLayout) contentParent.findViewById(R.id.last_parent);
         this.mTailView = (TextView) mlastTimeView.findViewById(R.id.last_modify);//得到最后修改时间TextView
-        this.mSignature=(TextView) mlastTimeView.findViewById(R.id.signature);
+        this.mSignature = (TextView) mlastTimeView.findViewById(R.id.signature);
 
         //生成创建和修改时间字符串
         String createTime = getResources().getString(R.string.create_time) + HanziToPinyin.Token.SEPARATOR + NoteUtil.getDate(this, this.mEditNote.mCreateTime);
@@ -1452,12 +1448,12 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     //保存，新线程调用saveImpl();
     void save() {
-            new Thread(new Runnable() {
-                public void run() {
+        new Thread(new Runnable() {
+            public void run() {
 //                    NoteEditActivity.this.saveImpl();
-                    NoteEditActivity.this.mChanged = 0;
-                }
-            }).start();
+                NoteEditActivity.this.mChanged = 0;
+            }
+        }).start();
     }
 
     //按返回键，结束录音
@@ -1470,10 +1466,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
 
-
-
     //这个方法有问题很多问题，保存？？
-/*    void saveImpl() {
+    void saveImpl() {
         int index;
         View view;
         String tag;
@@ -1487,13 +1481,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         int size;
         NoteItem ni;
         Uri noteUri;
-        NoteApplication app;
         ArrayList<Integer> deleteList;
-        NotePaperActivity npa;
         Long now;
         ArrayList<Integer> changedList;
-        long accountID;
-        boolean delete = true;
+        boolean delete = true;//如果当前笔记内容为空，就删除笔记
         boolean islist = false;
         if (this.mEditNote == null) {
             Log.e(TAG, "the mEditNote is null!");
@@ -1501,7 +1492,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         }
         ContentValues cv;
 
-        //改变title
+        //title改变，如果为空则删除笔记
         if ((this.mChanged & CHANGE_TITLE) == CHANGE_TITLE) {
             Editable title = this.mTitleView.getText();
             if (title == null || title.length() <= 0) {
@@ -1511,12 +1502,12 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 this.mEditNote.mTitle = title.toString();
             }
         }
-
-        // delete = false;不知道什么意思
         if (this.mEditNote.mTitle != null && this.mEditNote.mTitle.length() > 0) {
             delete = false;
         }
-        ArrayList<String> fileList = new ArrayList();
+
+
+        ArrayList<String> fileList = new ArrayList<>();
         //改变内容
         if ((this.mChanged & CHANGE_CONTENT) == CHANGE_CONTENT) {
             BufferedWriter bw;
@@ -1529,536 +1520,27 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             this.mFirstImg = null;
             this.mFirstRecord = null;
             FileWriter fw = null;
-            ///开始try
-            try {
-                Writer fileWriter = new FileWriter(getFileStreamPath("list"), true);
-                ////try中try
-                    bw = new BufferedWriter(fileWriter);
-                    fw = fileWriter;
-                    ////try中try的catch
-                    if (fw != null) {
-                            fw.close();
-                    }
-                    fw = null;
-                    bw = null;
-                    /////
-                    for (index = 0; index < childCount; index += 1) {
-                        view = this.mEditParent.getChildAt(index);
-                        tag = (String) view.getTag();
-
-                            if (!"record".equals(tag)) {
-                                rl = (RichFrameLayout) view;
-                                nt = new NoteItemRecord();
-                                nt.mState = REQUEST_CODE_LOGIN;
-                                nt.mFileName = rl.getFileName();
-                                this.mDataList.add(nt);
-                                if (this.mFirstRecord == null) {
-                                    jo = new JSONObject();
-                                    jo.put(NoteUtil.JSON_STATE, nt.mState);
-                                    jo.put(NoteUtil.JSON_FILE_NAME, nt.mFileName);
-                                    this.mFirstRecord = jo.toString();
-                                }
-                                fileList.add(nt.mFileName);
-                            } else if (!"recording".equals(tag)) {
-                                rl2 = (RecordingLayout) view;
-                                nt = new NoteItemRecord();
-                                nt.mState = REQUEST_CODE_LOGIN;
-                                nt.mFileName = rl2.getRecordFileName();
-                                this.mDataList.add(nt);
-                                if (this.mFirstRecord == null) {
-                                    jo = new JSONObject();
-                                    jo.put(NoteUtil.JSON_STATE, nt.mState);
-                                    jo.put(NoteUtil.JSON_FILE_NAME, nt.mFileName);
-                                    this.mFirstRecord = jo.toString();
-                                }
-                                fileList.add(nt.mFileName);
-                            } else if (!NoteUtil.JSON_TEXT.equals(tag)) {
-                                nt2 = new NoteItemText();
-                                edit = (NoteEditText) view.findViewById(R.id.text);
-                                nt2.mText = edit.getText().toString();
-                                nt2.mState = ((CheckImageView) view.findViewById(R.id.check)).getImageType();
-                                nt2.mSpan = null;
-                                if (nt2.mState != 0) {
-                                    if (!islist) {
-                                        islist = true;
-                                    }
-                                    time = System.currentTimeMillis();
-                                    if (bw != null) {
-                                        head = BuildConfig.VERSION_NAME;
-                                        if (index == 0) {
-                                            head = "\n";
-                                        }
-                                        bw.write(head + this.mEditNote.mId + LunarCalendar.DATE_SEPARATOR + index + LunarCalendar.DATE_SEPARATOR + String.valueOf(time) + ":" + nt2.mText + "\nview : " + view + "\nedit: " + edit + "\n");
-                                    }
-                                }
-                                this.mDataList.add(nt2);
-                            } else if (!"image".equals(tag)) {
-                                image = (ScaleImageView) view.findViewById(R.id.image);
-                                nt3 = new NoteItemImage();
-                                nt3.mState = REQUEST_CODE_SHARING;
-                                nt3.mHeight = image.mHeight;
-                                nt3.mWidth = image.mWidth;
-                                nt3.mFileName = image.mFileName;
-                                this.mDataList.add(nt3);
-                                if (this.mFirstImg == null) {
-                                    jo = new JSONObject();
-                                    nii = nt3;
-                                    jo.put(NoteUtil.JSON_STATE, nii.mState);
-                                    jo.put(NoteUtil.JSON_IMAGE_HEIGHT, nii.mHeight);
-                                    jo.put(NoteUtil.JSON_IMAGE_WIDTH, nii.mWidth);
-                                    jo.put(NoteUtil.JSON_FILE_NAME, nii.mFileName);
-                                    this.mFirstImg = jo.toString();
-                                }
-                                fileList.add(nt3.mFileName);
-                            }
-                    }
-                    /////
-                    if (bw != null) {
-                        try {
-                            bw.close();
-                        } catch (Exception e32) {
-                            e32.printStackTrace();
-                        }
-                    }
-                    /////
-                    if (fw != null) {
-                        try {
-                            fw.close();
-                        } catch (Exception e322) {
-                            e322.printStackTrace();
-                        }
-                    }
-                    /////
-                    if (delete) {
-                        size = this.mDataList.size();
-                        index = 0;
-                        while (index < size) {
-                            ni = (NoteItem) this.mDataList.get(index);
-                            if (ni.mState != REQUEST_CODE_SHARING) {
-                                delete = false;
-                                break;
-                            } else if (ni.mState == REQUEST_CODE_LOGIN) {
-                                delete = false;
-                                break;
-                            } else {
-                                nt2 = (NoteItemText) ni;
-                                if (nt2.mText != null) {
-                                }
-                                index += 1;
-                            }
-                        }
-                    }
-                    /////
-                    if (delete) {
-                        if (this.mEditNote.mId == -1) {
-                        }
-                        if (REQUEST_CODE_EXPORT_TO_PIC == this.mPauseState) {
-                            if (this.mEditNote.mId == -1) {
-                                noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-                                app = (NoteApplication) getApplication();
-                                if (this.mPosition != -1) {
-                                    deleteList = new ArrayList();
-                                    deleteList.add(Integer.valueOf(this.mPosition));
-                                    app.setChangedData(REQUEST_CODE_SHARING, deleteList);
-                                }
-                                npa = app.getNotePaperActivity();
-                                if (npa != null) {
-                                    npa.setDeleteItemId(this.mEditNote.mId);
-                                }
-                                getContentResolver().delete(noteUri, null, null);
-                                return;
-                            }
-                            return;
-                        }
-                    }
-                    /////
-                    cv = new ContentValues();
-                    if (this.mEditNote.mId == -1) {
-                        cv.put(Notes.TITLE, this.mEditNote.mTitle);
-                        cv.put(Notes.NOTE, convert2JsonNoteText());
-                        now = Long.valueOf(System.currentTimeMillis());
-                        cv.put(Notes.CREATE_TIME, Long.valueOf(this.mEditNote.mCreateTime));
-                        cv.put(Notes.MODIFIED_DATE, now);
-                        cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
-                        cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
-                        cv.put(Notes.UUID, this.mEditNote.mUUId);
-                        cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-                        cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                        cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-                        cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
-                        if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
-                            cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
-                        }
-                        if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
-                            cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
-                        }
-                        cv.put(Notes.ENCRYPT, Integer.valueOf(this.mEditNote.mEncrypt ? REQUEST_CODE_EXPORT_TO_PIC : REQUEST_CODE_PICK));
-                        app = (NoteApplication) getApplication();
-                        changedList = new ArrayList();
-                        changedList.add(Integer.valueOf(REQUEST_CODE_PICK));
-                        app.setChangedData(REQUEST_CODE_EXPORT_TO_PIC, changedList);
-                        this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
-                        this.mEditNote.mFirstImg = this.mFirstImg;
-                        this.mEditNote.mFirstRecord = this.mFirstRecord;
-                        MobEventUtil.onSendMobEvent(this, "new_note", null);
-                        if (!TextUtils.isEmpty(this.mTitleView.getText())) {
-                            MobEventUtil.onSendMobEvent(this, "click_title_bar", null);
-                        }
-                        if (this.mFloatFlag) {
-                            this.mNewFlag = true;
-                            enterFloatingMode();
-                        }
-                        if (this.mEditNote.mTag > 0) {
-                            if ((this.mChanged & CHANGE_TAG) == 0) {
-                                MobEventUtil.onSendMobEvent(this, "click_new_withgroup", (String) null);
-                            } else {
-                                MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
-                            }
-                        }
-                        if ((this.mChanged & CHANGE_FONT_SIZE) == 0) {
-                            MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
-                            return;
-                        }
-                        return;
-                    }
-                    /////
-                    if (this.mChanged != 0) {
-                        noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-                        if ((this.mChanged & REQUEST_CODE_EXPORT_TO_PIC) != 0) {
-                            cv.put(Notes.TITLE, this.mEditNote.mTitle);
-                        }
-                        if ((this.mChanged & CHANGE_CONTENT) != 0) {
-                            cv.put(Notes.NOTE, convert2JsonNoteText());
-                            app = (NoteApplication) getApplication();
-                            if (this.mEditNote.mFirstImg == null) {
-                            }
-                            cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-                            app.onNoteImgChanged(this.mEditNote.mUUId);
-                            if (this.mEditNote.mFirstRecord == null) {
-                            }
-                            cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                            cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-                        }
-                        now = Long.valueOf(System.currentTimeMillis());
-                        if ((this.mChanged & -1048591) != 0) {
-                            cv.put(Notes.MODIFIED_DATE, now);
-                        }
-                        if ((this.mChanged & CHANGE_PAPER) != 0) {
-                            cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
-                        }
-                        if ((this.mChanged & CHANGE_FONT_COLOR) != 0) {
-                        }
-                        if ((this.mChanged & CHANGE_FONT_SIZE) != 0) {
-                            cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
-                            MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
-                        }
-                        if ((this.mChanged & CHANGE_TAG) != 0) {
-                            cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
-                            if (this.mEditNote.mTag > 0) {
-                                MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
-                            }
-                        }
-                        if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
-                            cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
-                        }
-                        if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
-                            cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
-                        }
-                        cv.put(Notes.ENCRYPT, Integer.valueOf(this.mEditNote.mEncrypt ? REQUEST_CODE_EXPORT_TO_PIC : REQUEST_CODE_PICK));
-                        if (this.mEditNote.mEncrypt) {
-                            accountID = ((NoteApplication) getApplication()).getMeizuAccount();
-                            if (accountID > 0) {
-                                cv.put(Notes.ACCOUNT_ID, Long.valueOf(accountID));
-                            } else {
-                                Log.e(TAG, "Encrypt without flyme account login, this shouldn't happen!");
-                            }
-                        } else {
-                            cv.put(Notes.ACCOUNT_ID, Integer.valueOf(REQUEST_CODE_PICK));
-                        }
-                        app = (NoteApplication) getApplication();
-                        changedList = new ArrayList();
-                        changedList.add(Integer.valueOf(this.mPosition));
-                        app.setChangedData(REQUEST_CODE_EXPORT_TO_TEXT, changedList);
-                        getContentResolver().update(noteUri, cv, null, null);
-                        this.mEditNote.mFirstImg = this.mFirstImg;
-                        this.mEditNote.mFirstRecord = this.mFirstRecord;
-                    }
-                    /////
-                    if (!this.mFloatFlag) {
-                        enterFloatingMode();
-                    }
-
-                ////try中try的catch结束
-            ///try的catch开始
-            } catch (Exception e4) {
-                ////
-                if (fw != null) {
-                    fw.close();
-                }
-                fw = null;
-                bw = null;
-                ////
-                for (index = REQUEST_CODE_PICK; index < childCount; index += REQUEST_CODE_EXPORT_TO_PIC) {
-                    view = this.mEditParent.getChildAt(index);
-                    tag = (String) view.getTag();
-                    if (!"record".equals(tag)) {
-                        rl = (RichFrameLayout) view;
-                        nt = new NoteItemRecord();
-                        nt.mState = REQUEST_CODE_LOGIN;
-                        nt.mFileName = rl.getFileName();
-                        this.mDataList.add(nt);
-                        if (this.mFirstRecord == null) {
-                            jo = new JSONObject();
-                            jo.put(NoteUtil.JSON_STATE, nt.mState);
-                            jo.put(NoteUtil.JSON_FILE_NAME, nt.mFileName);
-                            this.mFirstRecord = jo.toString();
-                        }
-                        fileList.add(nt.mFileName);
-                    } else if (!"recording".equals(tag)) {
-                        rl2 = (RecordingLayout) view;
-                        nt = new NoteItemRecord();
-                        nt.mState = REQUEST_CODE_LOGIN;
-                        nt.mFileName = rl2.getRecordFileName();
-                        this.mDataList.add(nt);
-                        if (this.mFirstRecord == null) {
-                            jo = new JSONObject();
-                            jo.put(NoteUtil.JSON_STATE, nt.mState);
-                            jo.put(NoteUtil.JSON_FILE_NAME, nt.mFileName);
-                            this.mFirstRecord = jo.toString();
-                        }
-                        fileList.add(nt.mFileName);
-                    } else if (!NoteUtil.JSON_TEXT.equals(tag)) {
-                        nt2 = new NoteItemText();
-                        edit = (NoteEditText) view.findViewById(R.id.text);
-                        nt2.mText = edit.getText().toString();
-                        nt2.mState = ((CheckImageView) view.findViewById(R.id.check)).getImageType();
-                        nt2.mSpan = null;
-                        if (nt2.mState != 0) {
-                            if (islist) {
-                                islist = true;
-                            }
-                            time = System.currentTimeMillis();
-                            if (bw != null) {
-                                head = BuildConfig.VERSION_NAME;
-                                if (index == 0) {
-                                    head = "\n";
-                                }
-                                bw.write(head + this.mEditNote.mId + LunarCalendar.DATE_SEPARATOR + index + LunarCalendar.DATE_SEPARATOR + String.valueOf(time) + ":" + nt2.mText + "\nview : " + view + "\nedit: " + edit + "\n");
-                            }
-                        }
-                        this.mDataList.add(nt2);
-                    } else if (!"image".equals(tag)) {
-                        image = (ScaleImageView) view.findViewById(R.id.image);
-                        nt3 = new NoteItemImage();
-                        nt3.mState = REQUEST_CODE_SHARING;
-                        nt3.mHeight = image.mHeight;
-                        nt3.mWidth = image.mWidth;
-                        nt3.mFileName = image.mFileName;
-                        this.mDataList.add(nt3);
-                        if (this.mFirstImg == null) {
-                            jo = new JSONObject();
-                            nii = nt3;
-                            jo.put(NoteUtil.JSON_STATE, nii.mState);
-                            jo.put(NoteUtil.JSON_IMAGE_HEIGHT, nii.mHeight);
-                            jo.put(NoteUtil.JSON_IMAGE_WIDTH, nii.mWidth);
-                            jo.put(NoteUtil.JSON_FILE_NAME, nii.mFileName);
-                            this.mFirstImg = jo.toString();
-                        }
-                        fileList.add(nt3.mFileName);
-                    }
-                }
-                ////
-                if (bw != null) {
-                    bw.close();
-                }
-                ////
-                if (fw != null) {
-                    fw.close();
-                }
-                ////
-                if (delete) {
-                    size = this.mDataList.size();
-                    index = REQUEST_CODE_PICK;
-                    while (index < size) {
-                        ni = (NoteItem) this.mDataList.get(index);
-                        if (ni.mState != REQUEST_CODE_SHARING) {
-                            if (ni.mState == REQUEST_CODE_LOGIN) {
-                                delete = false;
-                                break;
-                            }
-                            nt2 = (NoteItemText) ni;
-                            if (nt2.mText != null) {
-                            }
-                            index += REQUEST_CODE_EXPORT_TO_PIC;
-                        } else {
-                            delete = false;
-                            break;
-                        }
-                    }
-                }
-                ////
-                if (delete) {
-                    if (this.mEditNote.mId == -1) {
-                    }
-                    if (REQUEST_CODE_EXPORT_TO_PIC == this.mPauseState) {
-                        if (this.mEditNote.mId == -1) {
-                            noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-                            app = (NoteApplication) getApplication();
-                            if (this.mPosition != -1) {
-                                deleteList = new ArrayList();
-                                deleteList.add(Integer.valueOf(this.mPosition));
-                                app.setChangedData(REQUEST_CODE_SHARING, deleteList);
-                            }
-                            npa = app.getNotePaperActivity();
-                            if (npa != null) {
-                                npa.setDeleteItemId(this.mEditNote.mId);
-                            }
-                            getContentResolver().delete(noteUri, null, null);
-                            return;
-                        }
-                        return;
-                    }
-                }
-                ////
-                cv = new ContentValues();
-                if (this.mEditNote.mId == -1) {
-                    if (this.mChanged != 0) {
-                        noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-                        if ((this.mChanged & REQUEST_CODE_EXPORT_TO_PIC) != 0) {
-                            cv.put(Notes.TITLE, this.mEditNote.mTitle);
-                        }
-                        if ((this.mChanged & CHANGE_CONTENT) != 0) {
-                            cv.put(Notes.NOTE, convert2JsonNoteText());
-                            app = (NoteApplication) getApplication();
-                            if (this.mEditNote.mFirstImg == null) {
-                            }
-                            cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-                            app.onNoteImgChanged(this.mEditNote.mUUId);
-                            if (this.mEditNote.mFirstRecord == null) {
-                            }
-                            cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                            cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-                        }
-                        now = Long.valueOf(System.currentTimeMillis());
-                        if ((this.mChanged & -1048591) != 0) {
-                            cv.put(Notes.MODIFIED_DATE, now);
-                        }
-                        if ((this.mChanged & CHANGE_PAPER) != 0) {
-                            cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
-                        }
-                        if ((this.mChanged & CHANGE_FONT_COLOR) != 0) {
-                        }
-                        if ((this.mChanged & CHANGE_FONT_SIZE) != 0) {
-                            cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
-                            MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
-                        }
-                        if ((this.mChanged & CHANGE_TAG) != 0) {
-                            cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
-                            if (this.mEditNote.mTag > 0) {
-                                MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
-                            }
-                        }
-                        if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
-                            cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
-                        }
-                        if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
-                            cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
-                        }
-                        if (this.mEditNote.mEncrypt) {
-                        }
-                        cv.put(Notes.ENCRYPT, Integer.valueOf(this.mEditNote.mEncrypt ? REQUEST_CODE_EXPORT_TO_PIC : REQUEST_CODE_PICK));
-                        if (this.mEditNote.mEncrypt) {
-                            cv.put(Notes.ACCOUNT_ID, Integer.valueOf(REQUEST_CODE_PICK));
-                        } else {
-                            accountID = ((NoteApplication) getApplication()).getMeizuAccount();
-                            if (accountID > 0) {
-                                Log.e(TAG, "Encrypt without flyme account login, this shouldn't happen!");
-                            } else {
-                                cv.put(Notes.ACCOUNT_ID, Long.valueOf(accountID));
-                            }
-                        }
-                        app = (NoteApplication) getApplication();
-                        changedList = new ArrayList();
-                        changedList.add(Integer.valueOf(this.mPosition));
-                        app.setChangedData(REQUEST_CODE_EXPORT_TO_TEXT, changedList);
-                        getContentResolver().update(noteUri, cv, null, null);
-                        this.mEditNote.mFirstImg = this.mFirstImg;
-                        this.mEditNote.mFirstRecord = this.mFirstRecord;
-                    }
-                    if (!this.mFloatFlag) {
-                        enterFloatingMode();
-                    }
-                }
-                ////
-                cv.put(Notes.TITLE, this.mEditNote.mTitle);
-                cv.put(Notes.NOTE, convert2JsonNoteText());
-                now = Long.valueOf(System.currentTimeMillis());
-                cv.put(Notes.CREATE_TIME, Long.valueOf(this.mEditNote.mCreateTime));
-                cv.put(Notes.MODIFIED_DATE, now);
-                cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
-                cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
-                cv.put(Notes.UUID, this.mEditNote.mUUId);
-                cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-                cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-                cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
-                ////
-                if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
-                    cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
-                }
-                ////
-                if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
-                    cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
-                }
-                ////
-                if (this.mEditNote.mEncrypt) {
-                }
-                cv.put(Notes.ENCRYPT, Integer.valueOf(this.mEditNote.mEncrypt ? REQUEST_CODE_EXPORT_TO_PIC : REQUEST_CODE_PICK));
-                app = (NoteApplication) getApplication();
-                changedList = new ArrayList();
-                changedList.add(Integer.valueOf(REQUEST_CODE_PICK));
-                app.setChangedData(REQUEST_CODE_EXPORT_TO_PIC, changedList);
-                this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
-                this.mEditNote.mFirstImg = this.mFirstImg;
-                this.mEditNote.mFirstRecord = this.mFirstRecord;
-                MobEventUtil.onSendMobEvent(this, "new_note", null);
-                ////
-                if (TextUtils.isEmpty(this.mTitleView.getText())) {
-                    MobEventUtil.onSendMobEvent(this, "click_title_bar", null);
-                }
-                ////
-                if (this.mFloatFlag) {
-                    this.mNewFlag = true;
-                    enterFloatingMode();
-                }
-                ////
-                if (this.mEditNote.mTag > 0) {
-                    if ((this.mChanged & CHANGE_TAG) == 0) {
-                        MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
-                    } else {
-                        MobEventUtil.onSendMobEvent(this, "click_new_withgroup", (String) null);
-                    }
-                }
-                ////
-                if ((this.mChanged & CHANGE_FONT_SIZE) == 0) {
-                    MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
-                    return;
-                }
-                ////
-                return;
+            Writer fileWriter = new FileWriter(getFileStreamPath("list"), true);
+            ////try中try
+            bw = new BufferedWriter(fileWriter);
+            fw = fileWriter;
+            ////try中try的catch
+            if (fw != null) {
+                fw.close();
             }
-            ///try的catch结束,try结束
-
-            ///
+            fw = null;
+            bw = null;
+            //遍历笔记元素
             for (index = 0; index < childCount; index += 1) {
                 view = this.mEditParent.getChildAt(index);
                 tag = (String) view.getTag();
-                if (!"record".equals(tag)) {
+                if (!"record".equals(tag)) {//如果是录音元素
                     rl = (RichFrameLayout) view;
                     nt = new NoteItemRecord();
-                    nt.mState = REQUEST_CODE_LOGIN;
+                    nt.mState = 4;
                     nt.mFileName = rl.getFileName();
                     this.mDataList.add(nt);
+//                                设置第一个录音为json对象的String
                     if (this.mFirstRecord == null) {
                         jo = new JSONObject();
                         jo.put(NoteUtil.JSON_STATE, nt.mState);
@@ -2066,29 +1548,29 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                         this.mFirstRecord = jo.toString();
                     }
                     fileList.add(nt.mFileName);
-                } else if (!"recording".equals(tag)) {
+                } else if (!"recording".equals(tag)) {//如果是正在录音的控件
                     rl2 = (RecordingLayout) view;
                     nt = new NoteItemRecord();
-                    nt.mState = REQUEST_CODE_LOGIN;
+                    nt.mState = 4;
                     nt.mFileName = rl2.getRecordFileName();
-                    if (nt.mFileName != null && (NoteUtil.getFile(this.mEditNote.mUUId, nt.mFileName).length() / 8) / 1000 >= 1) {
-                        this.mDataList.add(nt);
-                        if (this.mFirstRecord == null) {
-                            jo = new JSONObject();
-                            jo.put(NoteUtil.JSON_STATE, nt.mState);
-                            jo.put(NoteUtil.JSON_FILE_NAME, nt.mFileName);
-                            this.mFirstRecord = jo.toString();
-                        }
-                        fileList.add(nt.mFileName);
+                    this.mDataList.add(nt);
+                    //                                设置第一个录音为json对象的String
+                    if (this.mFirstRecord == null) {
+                        jo = new JSONObject();
+                        jo.put(NoteUtil.JSON_STATE, nt.mState);
+                        jo.put(NoteUtil.JSON_FILE_NAME, nt.mFileName);
+                        this.mFirstRecord = jo.toString();
                     }
-                } else if (!NoteUtil.JSON_TEXT.equals(tag)) {
+                    fileList.add(nt.mFileName);
+                } else if ("text".equals(tag)) {
                     nt2 = new NoteItemText();
                     edit = (NoteEditText) view.findViewById(R.id.text);
                     nt2.mText = edit.getText().toString();
                     nt2.mState = ((CheckImageView) view.findViewById(R.id.check)).getImageType();
                     nt2.mSpan = null;
+
                     if (nt2.mState != 0) {
-                        if (islist) {
+                        if (!islist) {
                             islist = true;
                         }
                         time = System.currentTimeMillis();
@@ -2104,7 +1586,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 } else if (!"image".equals(tag)) {
                     image = (ScaleImageView) view.findViewById(R.id.image);
                     nt3 = new NoteItemImage();
-                    nt3.mState = REQUEST_CODE_SHARING;
+                    nt3.mState = 3;
                     nt3.mHeight = image.mHeight;
                     nt3.mWidth = image.mWidth;
                     nt3.mFileName = image.mFileName;
@@ -2120,205 +1602,140 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     }
                     fileList.add(nt3.mFileName);
                 }
-            }
-            ///
-            if (bw != null) {
                 bw.close();
-            }
-            ///
-            if (fw != null) {
+
+
                 fw.close();
-            }
-        }
-        //改变内容结束，哈哈h6asdf1-3asdfasd-6f1-32水电费-312 31 321-32asd1f-3a2sd1f-3a-3sd21f-a23sd1f6w5e4r656511-3ds1f-32a1sd-f323-a2sd1f-3a2d1sf-32asd1f-31
 
-
-
-        //
-        if (delete) {
-            size = this.mDataList.size();
-            index = REQUEST_CODE_PICK;
-            while (index < size) {
-                ni = (NoteItem) this.mDataList.get(index);
-                if (ni.mState != REQUEST_CODE_SHARING) {
-                    if (ni.mState == REQUEST_CODE_LOGIN) {
-                        nt2 = (NoteItemText) ni;
-                        if (nt2.mText != null && nt2.mText.length() > 0) {
+                /////如果是删除当前笔记的话，再根据内容判断是否删除
+                if (delete) {
+                    size = this.mDataList.size();
+                    index = 0;
+//                        遍历mDataList笔记元素列表
+                    while (index < size) {
+                        ni = (NoteItem) this.mDataList.get(index);
+                        if (ni.mState == 3) {
                             delete = false;
                             break;
+                        } else {
+                            nt2 = (NoteItemText) ni;
+                            if (nt2.mText != null) {
+                                delete = false;
+                                break;
+                            }
                         }
-                        index += REQUEST_CODE_EXPORT_TO_PIC;
-                    } else {
-                        delete = false;
-                        break;
+                        index += 1;
                     }
                 }
-                delete = false;
-                break;
-            }
-        }
-
-        //
-        if (delete) {
-            if (this.mEditNote.mId == -1 || this.mFloatFlag) {
-                if (REQUEST_CODE_EXPORT_TO_PIC == this.mPauseState) {
-                    if (this.mEditNote.mId == -1) {
+                /////如果是删除
+                if (delete) {
+                    if (this.mEditNote.mId == -1) {/*新建笔记*/
+                        return;/*删除新建笔记什么都不做*/
+                    }
+                    if (this.mEditNote.mId != -1) {
+                                /*不是新建笔记，获得笔记的uri*/
                         noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-                       //一大堆事，删除时要做
-                        *//* app = (NoteApplication) getApplication();
-                        if (this.mPosition != -1) {
-                            deleteList = new ArrayList();
-                            deleteList.add(Integer.valueOf(this.mPosition));
-                            app.setChangedData(REQUEST_CODE_SHARING, deleteList);
-                        }
-                        npa = app.getNotePaperActivity();
-                        if (npa != null) {
-                            npa.setDeleteItemId(this.mEditNote.mId);
-                        }*//*
                         getContentResolver().delete(noteUri, null, null);
                         return;
                     }
                     return;
                 }
-            }
-            return;
-        }
-        cv = new ContentValues();
-        //
-        if (this.mEditNote.mId == -1) {
-            cv.put(Notes.TITLE, this.mEditNote.mTitle);
-            cv.put(Notes.NOTE, convert2JsonNoteText());
-            now = Long.valueOf(System.currentTimeMillis());
-            cv.put(Notes.CREATE_TIME, Long.valueOf(this.mEditNote.mCreateTime));
-            cv.put(Notes.MODIFIED_DATE, now);
-            cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
-            cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
-            cv.put(Notes.UUID, this.mEditNote.mUUId);
-            cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-            cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-            cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-            cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
-            if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
-                cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
-            }
-            if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
-                cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
-            }
-            if (TagData.FUN_ENCRYPT && (this.mChanged & CHANGE_ENCRYPT) != 0) {
-                if (this.mEditNote.mEncrypt) {
-                }
-                cv.put(Notes.ENCRYPT, Integer.valueOf(this.mEditNote.mEncrypt ? REQUEST_CODE_EXPORT_TO_PIC : REQUEST_CODE_PICK));
-            }
-//            app = (NoteApplication) getApplication();
-            changedList = new ArrayList();
-            changedList.add(Integer.valueOf(REQUEST_CODE_PICK));
-//            app.setChangedData(REQUEST_CODE_EXPORT_TO_PIC, changedList);
-            this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
-            this.mEditNote.mFirstImg = this.mFirstImg;
-            this.mEditNote.mFirstRecord = this.mFirstRecord;
-//            MobEventUtil.onSendMobEvent(this, "new_note", null);
-            if (TextUtils.isEmpty(this.mTitleView.getText())) {
-//                MobEventUtil.onSendMobEvent(this, "click_title_bar", null);
-            }
-            if (this.mFloatFlag) {
-                this.mNewFlag = true;
-                enterFloatingMode();
-            }
-            if (this.mEditNote.mTag > 0) {
-                if ((this.mChanged & CHANGE_TAG) == 0) {
-//                    MobEventUtil.onSendMobEvent(this, "click_new_withgroup", (String) null);
-                } else {
-//                    MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
-                }
-            }
-            if ((this.mChanged & CHANGE_FONT_SIZE) == 0) {
-//                MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
-                return;
-            }
-            return;
-        }
+                /////是否时delete的相关的事情完成后，就开始保存笔记了\
+//
+                cv = new ContentValues();
+//                如果是新建笔记
+                if (this.mEditNote.mId == -1) {//设置ContentValues
 
-        //
-        if (this.mChanged != 0) {
-            noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-            if ((this.mChanged & REQUEST_CODE_EXPORT_TO_PIC) != 0) {
-                cv.put(Notes.TITLE, this.mEditNote.mTitle);
-            }
-            if ((this.mChanged & CHANGE_CONTENT) != 0) {
-                cv.put(Notes.NOTE, convert2JsonNoteText());
-                //涉及NoteApplication
-//                app = (NoteApplication) getApplication();
-                if (this.mEditNote.mFirstImg == null && !this.mEditNote.mFirstImg.equals(this.mFirstImg)) {
+
+                    cv.put(Notes.TITLE, this.mEditNote.mTitle);
+                    cv.put(Notes.NOTE, convert2JsonNoteText());
+                    now = System.currentTimeMillis();
+                    cv.put(Notes.CREATE_TIME, this.mEditNote.mCreateTime);
+                    cv.put(Notes.MODIFIED_DATE, now);
+                    cv.put(Notes.PAPER, this.mEditNote.mPaper);
+                    cv.put(Notes.FONT_SIZE, this.mEditNote.mTextSize);
+                    cv.put(Notes.UUID, this.mEditNote.mUUId);
                     cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-//                    app.onNoteImgChanged(this.mEditNote.mUUId);
-                } else if (this.mEditNote.mFirstImg == null && this.mFirstImg != null) {
-                    cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-//                    app.onNoteImgChanged(this.mEditNote.mUUId);
-                }
-                if (this.mEditNote.mFirstRecord == null && !this.mEditNote.mFirstRecord.equals(this.mFirstRecord)) {
                     cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                } else if (this.mEditNote.mFirstRecord == null && this.mFirstRecord != null) {
-                    cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                }
-                cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-            }
-            now = Long.valueOf(System.currentTimeMillis());
-            if ((this.mChanged & -1048591) != 0) {
-                cv.put(Notes.MODIFIED_DATE, now);
-            }
-            if ((this.mChanged & CHANGE_PAPER) != 0) {
-                cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
-            }
-            if ((this.mChanged & CHANGE_FONT_COLOR) != 0) {
-            }
-            if ((this.mChanged & CHANGE_FONT_SIZE) != 0) {
-                cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
-//                MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
-            }
-            if ((this.mChanged & CHANGE_TAG) != 0) {
-                cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
-                if (this.mEditNote.mTag > 0) {
-//                    MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
-                }
-            }
-            if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
-                cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
-            }
-            if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
-                cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
-            }
-            if (TagData.FUN_ENCRYPT && (this.mChanged & CHANGE_ENCRYPT) != 0) {
-                if (this.mEditNote.mEncrypt) {
-                }
-                cv.put(Notes.ENCRYPT, this.mEditNote.mEncrypt ? 1 : 0);
-                //put魅族accountID，只有登录了魅族账户才能加密
-*//*                if (this.mEditNote.mEncrypt) {
-                    accountID = ((NoteApplication) getApplication()).getMeizuAccount();
-                    if (accountID > 0) {
-                        cv.put(Notes.ACCOUNT_ID, Long.valueOf(accountID));
-                    } else {
-                        Log.e(TAG, "Encrypt without flyme account login, this shouldn't happen!");
+                    cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
+                    cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
+
+                    if ((this.mChanged & 2) != 0) {
+                        cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
                     }
-                } else {
-                    cv.put(Notes.ACCOUNT_ID, Integer.valueOf(REQUEST_CODE_PICK));
-                }*//*
+                    app = (NoteApplication) getApplication();
+                    changedList = new ArrayList<>();
+                    changedList.add(0);
+                    app.setChangedData(1, changedList);
+                    this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
+                    this.mEditNote.mFirstImg = this.mFirstImg;
+                    this.mEditNote.mFirstRecord = this.mFirstRecord;
+                    return;
+                }
+                /////不是新建笔记，并且有改动
+                if (this.mChanged != 0) {
+                    noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
+                    if ((this.mChanged & REQUEST_CODE_EXPORT_TO_PIC) != 0) {
+                        cv.put(Notes.TITLE, this.mEditNote.mTitle);
+                    }
+                    if ((this.mChanged & CHANGE_CONTENT) != 0) {
+                        cv.put(Notes.NOTE, convert2JsonNoteText());
+                        app = (NoteApplication) getApplication();
+                        if (this.mEditNote.mFirstImg == null) {
+                        }
+                        cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
+                        app.onNoteImgChanged(this.mEditNote.mUUId);
+                        if (this.mEditNote.mFirstRecord == null) {
+                        }
+                        cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
+                        cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
+                    }
+                    now = Long.valueOf(System.currentTimeMillis());
+                    if ((this.mChanged & -1048591) != 0) {
+                        cv.put(Notes.MODIFIED_DATE, now);
+                    }
+                    if ((this.mChanged & CHANGE_PAPER) != 0) {
+                        cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
+                    }
+                    if ((this.mChanged & CHANGE_FONT_COLOR) != 0) {
+                    }
+                    if ((this.mChanged & CHANGE_FONT_SIZE) != 0) {
+                        cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
+                        MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
+                    }
+                    if ((this.mChanged & CHANGE_TAG) != 0) {
+                        cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
+                        if (this.mEditNote.mTag > 0) {
+                            MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
+                        }
+                    }
+                    if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
+                        cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
+                    }
+                    if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
+                        cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
+                    }
+                    cv.put(Notes.ENCRYPT, Integer.valueOf(this.mEditNote.mEncrypt ? REQUEST_CODE_EXPORT_TO_PIC : REQUEST_CODE_PICK));
+                    if (this.mEditNote.mEncrypt) {
+                        accountID = ((NoteApplication) getApplication()).getMeizuAccount();
+                        if (accountID > 0) {
+                            cv.put(Notes.ACCOUNT_ID, Long.valueOf(accountID));
+                        } else {
+                            Log.e(TAG, "Encrypt without flyme account login, this shouldn't happen!");
+                        }
+                    } else {
+                        cv.put(Notes.ACCOUNT_ID, Integer.valueOf(REQUEST_CODE_PICK));
+                    }
+                    changedList = new ArrayList();
+                    changedList.add(this.mPosition);
+                    getContentResolver().update(noteUri, cv, null, null);
+                    this.mEditNote.mFirstImg = this.mFirstImg;
+                    this.mEditNote.mFirstRecord = this.mFirstRecord;
+                }
             }
-            //涉及NoteApplication
-//            app = (NoteApplication) getApplication();
-            changedList = new ArrayList();
-            changedList.add(Integer.valueOf(this.mPosition));
-//            app.setChangedData(REQUEST_CODE_EXPORT_TO_TEXT, changedList);
-            getContentResolver().update(noteUri, cv, null, null);
-            this.mEditNote.mFirstImg = this.mFirstImg;
-            this.mEditNote.mFirstRecord = this.mFirstRecord;
         }
-        //
-        if (!this.mFloatFlag) {
-            enterFloatingMode();
-        }
-    }*/
+    }
 
-    @Override
     protected void onDestroy() {
         super.onDestroy();
         if (this.mRecordingLayoutView != null) {
@@ -2345,6 +1762,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
     //设置mViewImageItem
+
     public void viewImage(RichFrameLayout view) {
         this.mViewImageItem = view;
     }
@@ -2552,8 +1970,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             if (result == 0) {
                 Log.d(TAG, "addImage: file.getName();" + file.getName());
                 return file.getName();
-            }
-            else return null;
+            } else return null;
         }
 //        Log.d(TAG, "addImage: path != null 或 !path.equals(TempFileProvider.getScrapPath(context)");
 //        File cameraFile = new File(path);
@@ -2592,7 +2009,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 case REQUEST_CODE_PICK /*0*/:
                     if (data != null) {
                         uri = data.getData();
-                        Log.d(TAG, "onActivityResult: uri:"+uri);
+                        Log.d(TAG, "onActivityResult: uri:" + uri);
                     }
                     if (uri != null) {
                         //保存图片到引用文件夹
@@ -2648,7 +2065,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     this.mChanged |= REQUEST_CODE_LOGIN;
                     break;
                 case REQUEST_CODE_PICK_CAPTURE/*6*/:
-                    Log.d(TAG, "onActivityResult: uri:"+TempFileProvider.SCRAP_CONTENT_URI);
+                    Log.d(TAG, "onActivityResult: uri:" + TempFileProvider.SCRAP_CONTENT_URI);
                     String picName = addImage(this, TempFileProvider.SCRAP_CONTENT_URI, this.mEditNote.mUUId);
                     if (picName != null) {
                         insertImage(picName); //插入图片元素到笔记上
@@ -2656,9 +2073,9 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     }
                     break;
                 case 99:
-                    Log.d(TAG, "onActivityResult: "+99);
-                    Log.d(TAG, "onActivityResult: "+((NoteAppImpl)getApplication()).mSelectLabelIds.size());
-                    refreshLabel(((NoteAppImpl)getApplication()).mSelectLabelIds);
+                    Log.d(TAG, "onActivityResult: " + 99);
+                    Log.d(TAG, "onActivityResult: " + ((NoteAppImpl) getApplication()).mSelectLabelIds.size());
+                    refreshLabel(((NoteAppImpl) getApplication()).mSelectLabelIds);
                     showLabel();
                     break;
             }
@@ -2676,7 +2093,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
     private void showLabel() {
-        if (mLabel.size()==0){
+        if (mLabel.size() == 0) {
             this.mLabelContent.setVisibility(View.INVISIBLE);
         }
         this.mLabelContent.setVisibility(View.VISIBLE);
@@ -2708,7 +2125,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
 
     public String getLabelContentById(int id) {
-        Iterator i$ = ((NoteAppImpl)this.getApplication()).mlabels.iterator();
+        Iterator i$ = ((NoteAppImpl) this.getApplication()).mlabels.iterator();
         while (i$.hasNext()) {
             LabelCustomActivity.LabelHolder holder = (LabelCustomActivity.LabelHolder) i$.next();
             if (holder.mId == id) {
@@ -3757,8 +3174,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
 
-
-
     //listCount 好像是文本控件的数量在100以内返回true
     boolean listCountCheck() {
         int listCount = 0;
@@ -3813,7 +3228,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                             picCount += 1;
                             if (picCount >= 10) {
                                 Toast.makeText(this, R.string.image_limit_tip, REQUEST_CODE_PICK).show();
-                                return ;
+                                return;
                             }
                         }
                     }
@@ -3840,9 +3255,9 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 break;
 
             case R.id.action_label:
-                Intent i= new Intent();
+                Intent i = new Intent();
                 i.setClass(NoteEditActivity.this, LabelCustomActivity.class);
-                startActivityForResult(i,99);
+                startActivityForResult(i, 99);
                 return;
             case R.id.action_recorde:
                 if (this.mRecordingLayoutView == null && checkSdcardOK()) {
@@ -3869,6 +3284,12 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             default:
                 return;
         }
+    }
+
+    private void tintImageViewDrawable(int imageViewId, int iconId, int colorsId) {
+        Drawable tintIcon = DrawableCompat.wrap(ContextCompat.getDrawable(this, iconId));
+        DrawableCompat.setTintList(tintIcon, ContextCompat.getColorStateList(this, colorsId));
+        ((ImageView) findViewById(imageViewId)).setImageDrawable(tintIcon);
     }
 
     class ListShadowBuilder extends DragShadowBuilder {
@@ -3920,12 +3341,5 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         public String toString() {
             return this.name;
         }
-    }
-
-
-    private void tintImageViewDrawable(int imageViewId, int iconId, int colorsId) {
-        Drawable tintIcon = DrawableCompat.wrap(ContextCompat.getDrawable(this, iconId));
-        DrawableCompat.setTintList(tintIcon, ContextCompat.getColorStateList(this, colorsId));
-        ((ImageView) findViewById(imageViewId)).setImageDrawable(tintIcon);
     }
 }
