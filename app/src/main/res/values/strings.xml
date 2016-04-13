@@ -275,4 +275,20 @@
     <string name="widget_preview_small_title">Notes(4x1)</string>
     <string name="widget_preview_title">Notes(4x2)</string>
     <string name="words_limit">Input words limit 20000</string>
+
+
+
+    <string name="default_label_inspiration">Inspiration</string>
+    <string name="default_label_life">Life</string>
+    <string name="default_label_meeting">Meeting</string>
+    <string name="default_label_travel">Travel</string>
+
+    <string name="max_content_input_mum_limit">Maximum input content limit has been reached.</string>
+    <string name="label_custom_edit_text_hint">Input label</string>
+    <string name="label_custom_exist">Label exists, input again</string>
+    <string name="import_backup_config_dialog_btn_delete">delete</string>
+    <string name="import_backup_config_dialog_btn_choose">choose</string>
+    <string name="button_delete">delete</string>
+    <string name="button_sure">select</string>
+
 </resources>

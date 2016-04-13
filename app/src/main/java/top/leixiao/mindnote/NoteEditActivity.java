@@ -5,9 +5,7 @@ import android.app.AlertDialog.Builder;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
 import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -63,7 +61,6 @@ import android.view.View.OnKeyListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.MimeTypeMap;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -71,7 +68,6 @@ import android.widget.ListPopupWindow;
 import android.widget.PopupMenu;
 import android.widget.PopupMenu.OnMenuItemClickListener;
 import android.widget.ScrollView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -91,11 +87,10 @@ import top.leixiao.mindnote.database.NoteItem;
 import top.leixiao.mindnote.database.NoteItemImage;
 import top.leixiao.mindnote.database.NoteItemRecord;
 import top.leixiao.mindnote.database.NoteItemText;
-import top.leixiao.mindnote.database.NotePaper;
-import top.leixiao.mindnote.database.NotePaper.NoteFiles;
 import top.leixiao.mindnote.database.NotePaper.Notes;
 import top.leixiao.mindnote.database.TagData;
 import top.leixiao.mindnote.database.TempFileProvider;
+import top.leixiao.mindnote.label.LabelCustomActivity;
 import top.leixiao.mindnote.utils.Constants;
 import top.leixiao.mindnote.utils.EnvironmentUtils;
 import top.leixiao.mindnote.utils.HanziToPinyin;
@@ -117,6 +112,8 @@ import top.leixiao.mindnote.widget.RecordLinearLayout;
 import top.leixiao.mindnote.widget.RecordingLayout;
 import top.leixiao.mindnote.widget.RichFrameLayout;
 import top.leixiao.mindnote.widget.ScaleImageView;
+
+//import top.leixiao.mindnote.database.NotePaper.NoteFiles;
 
 public class NoteEditActivity extends RecordActivityBase implements OnClickListener{
     public static final int MAX_WORDS = 20000;
@@ -143,13 +140,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private static String sLastExportTextDirPath = null;
     private static String sLastInsertDirPath = null;
     final int MAX_LIST_COUNT = 100;
-    final int MSG_EXPORT_FINISH = REQUEST_CODE_EXPORT_TO_TEXT;
-    final int MSG_SHARE_FINISH = REQUEST_CODE_EXPORT_TO_PIC;
-    final long SPACE_LIMIT = 2097152;
-    final int STATE_PAUSE_BACKPRESS = REQUEST_CODE_EXPORT_TO_PIC;
-    final int STATE_PAUSE_DELETE = REQUEST_CODE_SHARING;
-    final int STATE_PAUSE_INSERT = REQUEST_CODE_EXPORT_TO_TEXT;
-    final int STATE_PAUSE_SWITCH_TO_BACK = REQUEST_CODE_LOGIN;
+    final long SPACE_LIMIT = 0x200000;
+
     public int mChanged = 0;//标识改变了那些
     public NoteData mEditNote;//正在编辑页面显示的笔记
     public LinearLayout mEditParent;//所有笔记元素的父容器
@@ -157,25 +149,21 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public String mFirstRecord;//第一个录音的名称，是唯一的
     public TextView mFirstTextView; //第一个TextView
     public NoteEditText mFocusNoteEditText;//当前获得焦点的NoteEditText文字元素
-    public int mGreyColor;//灰色值，文字颜色
+    public int mGreyColor;//灰色值
     public Object mIMEListener;//？？？
     public boolean mInitOK = false;//初始化是否完成？？？
     public boolean mIsCapture;//不知道？？
     public boolean mIsSoftInuptShow = false;//软键盘是否打开
+    public boolean mSoftInputShown = false;//如键盘是否显示的标识
     public long mLaunchTime;//启动时间
-    public int mPauseState = REQUEST_CODE_LOGIN;//暂停状态？？
     public ListPopupWindow mPopup;
-    public int mPosition; //位置？？什么位置？？
+    public int mPosition; //下一个插入元素的位置
     public ProgressDialog mProgressDialog;  //进度窗口
     public int mRecordHorizontalMargin;//录音水平和竖直间隔
     public int mRecordVerticalMargin;
     public RecordingLayout mRecordingLayoutView;//录音布局
     public ScrollView mScrollView; //滚动器，最外层控件
     public Intent mShareIntent; //分享时传递的Intent
-    public boolean mSoftInputShown = false;//如键盘是否显示的标识
-    public EditText mTagEditor;//tag编辑器，实际是文本编辑框
-    public ArrayList<TagInfo> mTagList = new ArrayList();//Tag列表
-    public Spinner mTagSpinner;//Tag下拉菜单
     public TextView mTailView; //尾巴textVeiw，用来显示时间
     public TextView mSignature; //尾巴签名，用来显示签名
     public int mTextColor;//文本颜色
@@ -207,28 +195,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public int mType;//显示类型，导出图片或文字或编辑类型
     public RichFrameLayout mViewImageItem;//笔记的图片元素
     public int mWidth;//宽度？？界面宽度的宽度？
-    private Button mButtonSave = null;//保存按钮????
-
-    //文本监听器
-    public TextWatcher mTextWatch = new TextWatcher() {
-        public void afterTextChanged(Editable editable) {
-            if (NoteEditActivity.this.mButtonSave != null) {
-                if (editable.length() <= 0 || TextUtils.isEmpty(editable.toString().trim())) {
-                    NoteEditActivity.this.mButtonSave.setEnabled(false);
-                } else {
-                    NoteEditActivity.this.mButtonSave.setEnabled(true);
-                }
-            }
-        }
-
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        }
-
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-        }
-    };
     public  int mCount = 0;
-
 
     //删除 点击 的监听 deleteImageView调用？？？
     public OnClickListener mDeleteClickListener = new OnClickListener() {
@@ -299,9 +266,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     private ArrayList<NoteItem> mDataList = new ArrayList<>();//存储NoteItem的列表，文字，图片，和声音
     private HashSet<String> mDeleteFilesList;//删除文件列表
-    private boolean mFloatFlag = false;//桌面显示的标签？？
     private int mFocusId = -2;//当前光标焦点？？？
-    private boolean mGroupSwitch = true;//分类切换开关
     private Handler mHandler = new Handler();//多线程
 
     //界面更新Handler
@@ -351,7 +316,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private MenuItem mMenuDesktop;//显示到桌面
     private MenuItem mMenuExport;//导出
     private MenuItem mMenuExportPic;//导出为图片
-    private MenuItem mMenuFloat;//浮动？
     private MenuItem mMenuList;//？？
     private MenuItem mMenuMore;//更多？
     private MenuItem mMenuPaper;//背景纸
@@ -374,7 +338,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         }
     };
 
-    private boolean mNewFlag = false;//新标签？？
 
     //什么监听？？根据实验，如果记事本既没有标题，又没有内容，或只有一个文字元素，且为空时
     //按返回键后，直接退出编辑界面，返回笔记列表界面，且不保存，或将已有笔记删除
@@ -395,33 +358,26 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     };
 
     private int mRequestCode = -1; //请求码
-
     private BroadcastReceiver mScreenOffAndHomeReceiver = null; //广播接收器
-
     private int mSelectStart = -1;//选择开始处
-
+    private boolean mNewFlag=false;
     //时间改变广播接收器
+
     private BroadcastReceiver mTimeChangedReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             if ("android.intent.action.TIME_SET".equals(intent.getAction())) {
                 String createTime = NoteEditActivity.this.getResources().getString(R.string.create_time) + HanziToPinyin.Token.SEPARATOR + NoteUtil.getDate(NoteEditActivity.this, NoteEditActivity.this.mEditNote.mCreateTime);
                 String modifyTime = NoteEditActivity.this.getResources().getString(R.string.last_modified) + HanziToPinyin.Token.SEPARATOR + NoteUtil.getDate(NoteEditActivity.this, NoteEditActivity.this.mEditNote.mModifyTime);
+
+                //根据当前的目的设置创建于，或更新于
                 switch (NoteEditActivity.this.mType) {
-                    case NoteUtil.EDIT_TYPE_FLOAT /*-6*/:
-                        if (NoteEditActivity.this.mNewFlag) {
-                            NoteEditActivity.this.mTailView.setText(createTime);
-                            return;
-                        } else {
-                            NoteEditActivity.this.mTailView.setText(modifyTime);
-                            return;
-                        }
                     case NoteUtil.EDIT_TYPE_UPDATE /*-5*/:
                         NoteEditActivity.this.mTailView.setText(modifyTime);
                         return;
                     case NoteUtil.EDIT_TYPE_CAMERA /*-4*/:
                     case NoteUtil.EDIT_TYPE_RECORD /*-3*/:
                     case NoteUtil.EDIT_TYPE_LIST /*-2*/:
-                    case -1 /*-1*/:
+                    case NoteUtil.EDIT_TYPE_NORMAL /*-1*/:
                         NoteEditActivity.this.mTailView.setText(createTime);
                         return;
                     default:
@@ -435,7 +391,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private PhoneStateListener phoneStateListener = new PhoneStateListener() {
         public void onCallStateChanged(int state, String incomingNumber) {
             switch (state) {
-                case NoteEditActivity.REQUEST_CODE_EXPORT_TO_TEXT /*2*/:
+                case 2 /*2*/:
                     if (NoteEditActivity.this.mRecordingLayoutView != null) {
                         NoteEditActivity.this.mRecordingLayoutView.pause();
                         return;
@@ -455,21 +411,45 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private View mSelectLabel;
     private View mSelectRecord;
     private View mSelectReminder;
-    private boolean mWidgetJump;
+    private LinearLayout mlastTimeView;
+
+    private ArrayList<Integer> mSelectLabelIds = new ArrayList<>();
+    private ArrayList<Integer> mLabel=new ArrayList<>();
+    private ViewGroup mLabelContent;
+    private LinearLayout mLabelView;
 
 
     //入口
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit);//加载布局
+        initData();
+        initlView();
+        initListener();
+        initEditLayout();//加载显示的笔记内容
+        initTitle();
+        showLabel();
+        this.telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+        this.telephonyManager.listen(this.phoneStateListener, 32);
+        registerReceiver(this.mTimeChangedReceiver, new IntentFilter("android.intent.action.TIME_SET"));
 
+//        初始化数据和界面后，剩下的主要是对事件的相应
+//        1、OpentionMenu
+//        2、功能按钮
+
+    }
+
+    private void initlView() {
+
+        this.mLabelView = (LinearLayout) findViewById(R.id.new_note_label);
+        //功能按键
+        this.mLabelContent = (ViewGroup) this.mLabelView.findViewById(R.id.new_note_label_content);
         this.mSelectBill = findViewById(R.id.action_bill);
         this.mSelectLabel = findViewById(R.id.action_label);
         this.mSelectRecord = findViewById(R.id.action_recorde);
         this.mSelectReminder = findViewById(R.id.action_reminder);
         this.mSelectCamera = findViewById(R.id.action_camera);
         this.mSelectGallery = findViewById(R.id.action_gallery);
-        initListener();
         tintImageViewDrawable(R.id.action_label, R.mipmap.action_label_icon, R.color.action_bar_image_color);
         tintImageViewDrawable(R.id.action_bill, R.mipmap.action_bill_icon, R.color.action_bar_image_color);
         tintImageViewDrawable(R.id.action_reminder, R.mipmap.action_alert_icon, R.color.action_bar_image_color);
@@ -477,70 +457,52 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         tintImageViewDrawable(R.id.action_gallery, R.mipmap.attachment_select_image, R.color.action_bar_image_color);
         tintImageViewDrawable(R.id.action_camera, R.mipmap.attachment_take_photos, R.color.action_bar_image_color);
 
-
-        //加载toolbar
-        edit_toolbar = (Toolbar) findViewById(R.id.edit_toolbar);
+        //toolbar
+        edit_toolbar = (Toolbar) findViewById(R.id.edit_toolbar);//加载toolbar
         setSupportActionBar(edit_toolbar);
-        //得到最外层mScrollView
-        this.mScrollView = (ScrollView) findViewById(R.id.scroll_view);
+
+        //滑动框中View
+        this.mTitleView = (EditTextCloud) findViewById(R.id.title);
+        this.mScrollView = (ScrollView) findViewById(R.id.scroll_view);//得到最外层mScrollView
         ScrollViewUtils.setDelayTopOverScrollEnabled(this.mScrollView, true);
-        //设置文字颜色
-        this.mTextColor = getResources().getColor(R.color.common_font_color);
-        //设置灰色
-        this.mGreyColor = getResources().getColor(R.color.common_grey_color);
-        //水平边距
-        this.mRecordHorizontalMargin = getResources().getDimensionPixelSize(R.dimen.edit_recording_horizontal_margin);
-        //数值边距
-        this.mRecordVerticalMargin = getResources().getDimensionPixelOffset(R.dimen.edit_recording_bottom_margin);
-        //得到显示宽度？？？
-        DisplayMetrics dm = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(dm);
-        //设置图片，或录音控件宽度
-        this.mWidth = dm.widthPixels - 200;
-//            if (!DelayProcSendIntent(getIntent())) {
+        LinearLayout contentParent = (LinearLayout) this.mScrollView.findViewById(R.id.parent);
+        this.mEditParent = (LinearLayout) contentParent.findViewById(R.id.edit_parent);
+        this.mlastTimeView = (LinearLayout) contentParent.findViewById(R.id.last_parent);
+        this.mTailView = (TextView) mlastTimeView.findViewById(R.id.last_modify);//得到最后修改时间TextView
+        this.mSignature=(TextView) mlastTimeView.findViewById(R.id.signature);
 
-        //关键的地方，初始化界面的各种组件
-        initContentView();
-
-        if (this.mEditNote != null) {
-            //设置背景颜色为mEditNote.mPaper
-            getWindow().setBackgroundDrawable(new ColorDrawable(NoteUtil.getBackgroundColor(this.mEditNote.mPaper)));
-        }
-//            }
-
-        //高级加密，当按home和屏幕熄灭时关闭笔记,根据参数，关闭方式还不同
-        if (TagData.FUN_ENCRYPT) {
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction("android.intent.action.SCREEN_OFF");
-            intentFilter.addAction("android.intent.action.CLOSE_SYSTEM_DIALOGS");
-            this.mScreenOffAndHomeReceiver = new BroadcastReceiver() {
-                public void onReceive(Context context, Intent intent) {
-                    if (intent.getAction().equals("android.intent.action.CLOSE_SYSTEM_DIALOGS")) {
-                        boolean isHomeKey = false;
-                        String reason = intent.getStringExtra("reason");
-                        if (reason != null && reason.equals("homekey")) {
-                            isHomeKey = true;
-                        }
-                        if (isHomeKey) {
-                            if (NoteEditActivity.this.mRequestCode != -1) {
-                                NoteEditActivity.this.finishActivity(NoteEditActivity.this.mRequestCode);
-                                NoteEditActivity.this.mRequestCode = -1;
-                            }
-                            if (NoteEditActivity.this.mEditNote.mEncrypt) {
-                                NoteEditActivity.this.finishAffinity();
-                            }
-                        }
-                    } else if (intent.getAction().equals("android.intent.action.SCREEN_OFF") && NoteEditActivity.this.mEditNote.mEncrypt) {
-                        NoteEditActivity.this.finish();
+        //生成创建和修改时间字符串
+        String createTime = getResources().getString(R.string.create_time) + HanziToPinyin.Token.SEPARATOR + NoteUtil.getDate(this, this.mEditNote.mCreateTime);
+        String modifyTime = getResources().getString(R.string.last_modified) + HanziToPinyin.Token.SEPARATOR + NoteUtil.getDate(this, this.mEditNote.mModifyTime);
+        switch (this.mType) {
+            case NoteUtil.EDIT_TYPE_UPDATE /*-5*/:
+                this.mTailView.setText(modifyTime);
+                getWindow().setSoftInputMode(18);
+                //下面不懂
+                this.mScrollView.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+                break;
+            case NoteUtil.EDIT_TYPE_CAMERA /*-4*/:
+            case NoteUtil.EDIT_TYPE_RECORD /*-3*/:
+                this.mTailView.setText(createTime);
+                getWindow().setSoftInputMode(18);
+                int childCount = this.mEditParent.getChildCount();
+                if (childCount > 0) {
+                    View last = this.mEditParent.getChildAt(childCount - 1);
+                    if (NoteUtil.JSON_TEXT.equals(last.getTag())) {
+                        last.findViewById(R.id.text).requestFocus();
                     }
                 }
-            };
-            registerReceiver(this.mScreenOffAndHomeReceiver, intentFilter);
+                this.mSoftInputShown = true;
+                break;
+            case NoteUtil.EDIT_TYPE_LIST /*-2*/:
+            case NoteUtil.EDIT_TYPE_NORMAL /*-1*/:
+                this.mTailView.setText(createTime);
+                getWindow().setSoftInputMode(21);
+                this.mSoftInputShown = true;
+                onFocusToEdit();
+                break;
         }
-        setActionBarOverLayColor();
-        this.telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-        this.telephonyManager.listen(this.phoneStateListener, 32);
-        registerReceiver(this.mTimeChangedReceiver, new IntentFilter("android.intent.action.TIME_SET"));
+
     }
 
     private void initListener() {
@@ -550,6 +512,47 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         this.mSelectReminder.setOnClickListener(this);
         this.mSelectCamera.setOnClickListener(this);
         this.mSelectGallery.setOnClickListener(this);
+
+        this.mScrollView.findViewById(R.id.empty).setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                Point pt = new Point();
+                ReflectUtils.getLastTouchPoint(v, pt);
+                Rect r = new Rect();
+                NoteEditActivity.this.mEditParent.getGlobalVisibleRect(r);
+                if (pt.y >= r.bottom) {
+                    NoteEditActivity.this.onFocusToEdit();
+                }
+            }
+        });
+
+        mlastTimeView.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                NoteEditActivity.this.onFocusToEdit();
+            }
+        });
+
+        this.mTitleView.addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            public void afterTextChanged(Editable s) {
+                NoteEditActivity.this.setTitleChanged();
+            }
+        });
+
+        this.mTitleView.setOnKeyPreImeListener(getKeyPreImeListener());
+        this.mTitleView.setOnFocusChangeListener(new OnFocusChangeListener() {
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (NoteEditActivity.this.mInitOK) {
+
+                }
+            }
+        });
+
+
     }
 
     void setTopBlurEffect() {
@@ -622,176 +625,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         return false;
     }
 
-    //不懂
-    boolean DelayProcSendIntent(Intent intent) {
-        try {
-            Bundle extras = intent.getExtras();
-            if (extras == null) {
-                return false;
-            }
-            ArrayList<Parcelable> uris = new ArrayList();
-            SpannableStringBuilder text = new SpannableStringBuilder();
-            if (extras.containsKey("android.intent.extra.TEXT")) {
-                text.append(extras.getCharSequence("android.intent.extra.TEXT"));
-            }
-            if ("android.intent.action.SEND".equals(intent.getAction())) {
-                if (extras.containsKey("android.intent.extra.STREAM")) {
-                    Uri uri = (Uri) extras.getParcelable("android.intent.extra.STREAM");
-                    if (matchType(uri, "image/")) {
-                        uris.add(uri);
-                    } else if (text.toString().isEmpty()) {
-                        Toast.makeText(this, R.string.unsupported_content, REQUEST_CODE_PICK).show();
-                    }
-                }
-            } else if (!"android.intent.action.SEND_MULTIPLE".equals(intent.getAction())) {
-                return false;
-            } else {
-                if (extras.containsKey("android.intent.extra.STREAM")) {
-                    ArrayList<Parcelable> list = extras.getParcelableArrayList("android.intent.extra.STREAM");
-                    int picCount = REQUEST_CODE_PICK;
-                    boolean toastTip = true;
-                    Iterator i$ = list.iterator();
-                    while (i$.hasNext()) {
-                        Parcelable uri2 = (Parcelable) i$.next();
-                        if (matchType((Uri) uri2, "image/")) {
-                            toastTip = false;
-                            picCount += REQUEST_CODE_EXPORT_TO_PIC;
-                            if (picCount > 10) {
-                                Toast.makeText(this, R.string.image_limit_tip, REQUEST_CODE_PICK).show();
-                                break;
-                            }
-                            uris.add(uri2);
-                        }
-                    }
-                    if (extras.containsKey("android.intent.extra.TEXT")) {
-                        ArrayList<CharSequence> texts = intent.getCharSequenceArrayListExtra("android.intent.extra.TEXT");
-                        if (texts != null && texts.size() > 0) {
-                            int index = REQUEST_CODE_PICK;
-                            i$ = texts.iterator();
-                            while (i$.hasNext()) {
-                                CharSequence cs = (CharSequence) i$.next();
-                                if (index != 0) {
-                                    text.append("\n");
-                                }
-                                text.append(cs);
-                                index += REQUEST_CODE_EXPORT_TO_PIC;
-                            }
-                        }
-                    }
-                    if (toastTip && text.toString().isEmpty()) {
-                        Toast.makeText(this, R.string.unsupported_content, REQUEST_CODE_PICK).show();
-                    }
-                }
-            }
-            if (uris == null || uris.size() < REQUEST_CODE_EXPORT_TO_PIC) {
-                if (!TextUtils.isEmpty(text)) {
-                    this.mEditNote = new NoteData();
-                    this.mEditNote.mUUId = generateUUId();
-                    this.mDataList.clear();
-                    NoteItemText nt = new NoteItemText();
-                    nt.mText = text.toString();
-                    nt.mState = REQUEST_CODE_PICK;
-                    this.mDataList.add(nt);
-                    this.mEditNote.mNoteData = convert2JsonNoteText();
-                    this.mDataList.clear();
-                    this.mChanged |= CHANGE_CONTENT;
-                }
-                return false;
-            }
-            popupProgressDialog(R.string.convert_to_note);
-            final String noteText = !TextUtils.isEmpty(text) ? text.toString() : null;
-            final ArrayList<Parcelable> note_uris = uris;
-            new Thread(new Runnable() {
-                public void run() {
-                    NoteEditActivity.this.mEditNote = new NoteData();
-                    NoteEditActivity.this.mEditNote.mUUId = NoteEditActivity.this.generateUUId();
-                    NoteEditActivity.this.mDataList.clear();
-                    int result = NoteEditActivity.REQUEST_CODE_PICK;
-                    Iterator i$ = note_uris.iterator();
-                    while (i$.hasNext()) {
-                        Parcelable uri = (Parcelable) i$.next();
-                        File file = ImageUtil.getImageFile(NoteEditActivity.this, (Uri) uri, NoteEditActivity.this.mEditNote.mUUId);
-                        if (file != null) {
-                            int save_result = 0;
-                            try {
-                                save_result = ImageUtil.saveIntoFile(NoteEditActivity.this, (Uri) uri, file);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            if (save_result != 0) {
-                                if (result == 0) {
-                                    result = save_result;
-                                    final int finalSave_result = save_result;
-                                    NoteEditActivity.this.mHandler.post(new Runnable() {
-                                        public void run() {
-                                            NoteEditActivity.this.showErrorTip(finalSave_result);
-                                        }
-                                    });
-                                }
-                                Log.d(NoteEditActivity.TAG, "save image fail: " + uri);
-                            } else {
-                                String picName = file.getName();
-                                Rect rect = new Rect();
-                                ImageUtil.getImageSizeRect(file.getPath(), rect);
-                                NoteItemImage nt = new NoteItemImage();
-                                nt.mState = NoteEditActivity.REQUEST_CODE_SHARING;
-                                nt.mHeight = rect.height();
-                                nt.mWidth = rect.width();
-                                nt.mFileName = picName;
-                                NoteEditActivity.this.mDataList.add(nt);
-                                if (NoteEditActivity.this.mEditNote.mFirstImg == null) {
-                                    NoteEditActivity.this.mEditNote.mFirstImg = nt.mFileName;
-                                }
-                            }
-                        } else if (ImageUtil.checkSdcardAvailableSpace(2097152)) {
-                            File pDataDir = new File(NoteUtil.FILES_ANDROID_DATA);
-                            if (pDataDir == null || !pDataDir.exists()) {
-                                NoteEditActivity.this.mHandler.post(new Runnable() {
-                                    public void run() {
-                                        NoteEditActivity.this.showErrorTip(-4);
-                                    }
-                                });
-                                break;
-                            }
-                            Log.d(NoteEditActivity.TAG, "get image fail: " + uri);
-                        } else if (result == 0) {
-                            NoteEditActivity.this.mHandler.post(new Runnable() {
-                                public void run() {
-                                    NoteEditActivity.this.showErrorTip(-1);
-                                }
-                            });
-                        }
-                    }
-                    if (!TextUtils.isEmpty(noteText)) {
-                        NoteItemText nt2 = new NoteItemText();
-                        nt2.mText = noteText.toString();
-                        nt2.mState = NoteEditActivity.REQUEST_CODE_PICK;
-                        NoteEditActivity.this.mDataList.add(nt2);
-                    }
-                    NoteEditActivity.this.mEditNote.mNoteData = NoteEditActivity.this.convert2JsonNoteText();
-                    NoteEditActivity.this.mDataList.clear();
-                    NoteEditActivity noteEditActivity = NoteEditActivity.this;
-                    noteEditActivity.mChanged |= NoteEditActivity.CHANGE_CONTENT;
-                    NoteEditActivity.this.mHandler.post(new Runnable() {
-                        public void run() {
-                            NoteEditActivity.this.dismissProgressDialog();
-                            NoteEditActivity.this.initContentView();
-                            NoteEditActivity.this.invalidateOptionsMenu();
-                            if (NoteEditActivity.this.mEditNote != null) {
-                                NoteEditActivity.this.getWindow().setBackgroundDrawable(new ColorDrawable(NoteUtil.getBackgroundColor(NoteEditActivity.this.mEditNote.mPaper)));
-                            }
-                        }
-                    });
-                    NoteEditActivity.this.scanNoteDir();
-                }
-            }).start();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     //检查sdcard空间，并创建文件夹
     boolean checkSdcardOK() {
         if (ImageUtil.checkSdcardAvailableSpace(2097152)) {
@@ -808,19 +641,17 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
     //初始化一些View，好几把长
-    public void initContentView() {
+    public void initData() {
         Intent intent = getIntent();
         this.mPosition = intent.getIntExtra("pos", -1);//得到传入的位置
         long id = intent.getLongExtra("id", -1);//得到传入的id，笔记的id
         Uri noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, id);//得到笔记的唯一路径，ContentProvider需要
         this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -1);//得到传入的mtype
-        this.mWidgetJump = intent.getBooleanExtra("widgetJumpFlag", false);//得到传入的mWidgetJump
         this.mFocusId = intent.getIntExtra("focus", -2);//得到传入的mFocusId，光标位置？？
         this.mSelectStart = intent.getIntExtra("select", -1);//得到传入的mSelectStart
-        this.mNewFlag = intent.getBooleanExtra("creating", false);//得到传入的mNewFlag，新建笔记标签吗？？
-        boolean widgetJumpView = intent.getBooleanExtra("widgetJumpView", false);//得到widgetJumpView
+        this.mNewFlag = intent.getBooleanExtra("creating", false);//得到传入的mNewFlag，新建笔记标签
         long tag = intent.getLongExtra("tag", -1);//得到标识tag
-        //如果传入的标签<=-1，新建笔记？？？
+        //如果传入的id<=-1，新建笔记
         if (id <= -1) {
             if (this.mEditNote == null) {
                 //mmEditNote为空，新建笔记，并为其生成和设置唯一标识符mUUId
@@ -830,23 +661,17 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             this.mPosition = -1; //设置位置mPosition
             this.mEditNote.mId = -1;//设置mEditNote.mId
             this.mEditNote.mTag = tag;//设置tag
-            //判断加密
-            if (TagData.FUN_ENCRYPT && tag == -2) {
-                this.mEditNote.mEncrypt = true;
-                this.mChanged |= CHANGE_ENCRYPT;
-            }
             this.mEditNote.mTopTime = 0; //设置置顶时间为0
             this.mEditNote.mCreateTime = System.currentTimeMillis();//设置创建时间
             this.mNewFlag = true;//新建笔记设为true
         } else {
             //不是新建笔记的情况
-            //重数据库读出笔记
+            //从数据库读出笔记
             Cursor cursor = getContentResolver().query(noteUri, NoteData.NOTES_PROJECTION, null, null, Notes.DEFAULT_SORT_ORDER);
             if (cursor == null || cursor.getCount() <= 0) {
                 if (cursor != null) {
                     cursor.close();
                 }
-//                ((NoteApplication) getApplication()).notifyWidgetUpdate();
                 Toast.makeText(this, R.string.note_not_exist, Toast.LENGTH_SHORT).show();
                 finish();
                 return;
@@ -860,287 +685,22 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             this.mEditNote = new NoteData();
             Log.d(toString(), "mEditNote is null ");
         }
-        //得到contentParent，其中包括mEditParent
-        LinearLayout contentParent = (LinearLayout) this.mScrollView.findViewById(R.id.parent);
-        //得到mEditParent
-        this.mEditParent = (LinearLayout) contentParent.findViewById(R.id.edit_parent);
+
         this.mFirstImg = this.mEditNote.mFirstImg;//设置mFirstImg
         this.mFirstRecord = this.mEditNote.mFirstRecord;//设置mFirstRecord
-        //得到lastTimeView
-        LinearLayout lastTimeView = (LinearLayout) contentParent.findViewById(R.id.last_parent);
 
-        initEditLayout();//重点来了
-
-        initTitle();
-
-
+//        参数
+        this.mTextColor = getResources().getColor(R.color.common_font_color);//设置文字颜色
+        this.mGreyColor = getResources().getColor(R.color.common_grey_color);//设置灰色
+        //水平边距
+        this.mRecordHorizontalMargin = getResources().getDimensionPixelSize(R.dimen.edit_recording_horizontal_margin);
+        //数值边距
+        this.mRecordVerticalMargin = getResources().getDimensionPixelOffset(R.dimen.edit_recording_bottom_margin);
+        DisplayMetrics dm = new DisplayMetrics(); //得到显示宽度？？？
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        this.mWidth = dm.widthPixels - 200;//设置图片，或录音控件宽度
         this.mInitOK = true;
-        //点击屏幕上任何地方都可以进入编辑，去掉则点击没有文字控件的地方则不会进入编辑模式
-        this.mScrollView.findViewById(R.id.empty).setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                Point pt = new Point();
-                ReflectUtils.getLastTouchPoint(v, pt);
-                Rect r = new Rect();
-                NoteEditActivity.this.mEditParent.getGlobalVisibleRect(r);
-                if (pt.y >= r.bottom) {
-                    NoteEditActivity.this.onFocusToEdit();
-                }
-            }
-        });
-        lastTimeView.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                NoteEditActivity.this.onFocusToEdit();
-            }
-        });
-//        View view = this.mScrollView.findViewById(R.id.frame_parent);
 
-        switch (this.mType) {
-            case NoteUtil.EDIT_TYPE_CAMERA /*-4*/:
-                if (checkSdcardOK() && this.mType == -4) {
-                    this.mHandler.postDelayed(new Runnable() {
-                        public void run() {
-                            NoteEditActivity.this.onInsertImage();
-                        }
-                    }, 500);
-                    break;
-                }
-            case NoteUtil.EDIT_TYPE_RECORD /*-3*/:
-                if (checkSdcardOK()) {
-                    onRecord();
-                    break;
-                }
-                break;
-        }
-
-        //设置tagName,来自数据库
-        String tagName = getString(R.string.all_tag);
-        if (this.mEditNote.mTag > 0) {
-            Uri uri = ContentUris.withAppendedId(NotePaper.NoteCategory.CONTENT_URI, this.mEditNote.mTag);
-            ContentResolver contentResolver = getContentResolver();
-            String[] strArr = new String[1];
-            strArr[0] = NoteUtil.JSON_FILE_NAME;
-            Cursor c = contentResolver.query(uri, strArr, NotePaper.NoteCategory.DELETE + "<> 1", null, NotePaper.NoteCategory.DEFAULT_SORT_ORDER);
-            if (c != null) {
-                int cName = c.getColumnIndex(NoteUtil.JSON_FILE_NAME);
-                if (c.moveToNext()) {
-                    tagName = c.getString(cName);
-                }
-                c.close();
-            }
-        }
-
-
-        //得到最后修改时间TextView
-        this.mTailView = (TextView) lastTimeView.findViewById(R.id.last_modify);
-        //得到mTagSpinner
-        this.mTagSpinner = (Spinner) lastTimeView.findViewById(R.id.tag);
-        //在新线程中为mTagSpinner设置数据和监听
-/*        runOnUiThread(new Runnable() {
-            public void run() {
-                NoteEditActivity.this.queryTagList();
-                ArrayAdapter<TagInfo> adapter = new ArrayAdapter(NoteEditActivity.this, R.layout.tag_spinner_item, (TagInfo[]) NoteEditActivity.this.mTagList.toArray(new TagInfo[NoteEditActivity.REQUEST_CODE_PICK]));
-                adapter.setDropDownViewResource(R.layout.mz_select_dialog_singlechoice);
-                NoteEditActivity.this.mTagSpinner.setDropDownWidth(NoteEditActivity.this.getResources().getDimensionPixelSize(R.dimen.tag_popup_width));
-                NoteEditActivity.this.mTagSpinner.setAdapter(adapter);
-                NoteEditActivity.this.mTagSpinner.setSelection(NoteEditActivity.this.getTagIndex(), false);
-                NoteEditActivity.this.mTagSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-                    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                        TagInfo ti = (TagInfo) NoteEditActivity.this.mTagList.get(i);
-                        if (TagData.FUN_ENCRYPT && ti.id == -2) {
-                            if (!NoteEditActivity.this.mEditNote.mEncrypt) {
-                                ConnectivityManager cm = (ConnectivityManager) NoteEditActivity.this.getSystemService(CONNECTIVITY_SERVICE);
-                                Builder builder;
-                                if (cm.getActiveNetworkInfo() == null || !cm.getActiveNetworkInfo().isAvailable()) {
-                                    builder = new Builder(NoteEditActivity.this);
-                                    builder.setTitle(R.string.no_network);
-                                    builder.setMessage(R.string.no_network_msg);
-                                    builder.setPositiveButton(R.string.set_network, new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            NoteEditActivity.this.startActivity(new Intent("android.settings.WIFI_SETTINGS"));
-                                        }
-                                    });
-                                    builder.setNegativeButton("取消", null);
-*//*                                    builder.setOnDismissListener(new OnDismissListener() {
-                                        public void onDismiss(DialogInterface dialogInterface) {
-                                            NoteEditActivity.this.mTagSpinner.setSelection(NoteEditActivity.this.getTagIndex());
-                                }
-                            });*//*
-                                    builder.show().getButton(-1).setTextColor(NoteEditActivity.this.getResources().getColorStateList(R.color.mz_button_text_color_coral));
-                                    NoteEditActivity.this.dismissPopupIfShown();
-                                    return;
-                                }*//* else if (((NoteApplication) NoteEditActivity.this.getApplication()).getMeizuAccount() <= 0) {
-                                    builder = new Builder(NoteEditActivity.this);
-                                    builder.setTitle(R.string.login_title);
-                                    builder.setMessage(R.string.login_tip);
-                                    builder.setPositiveButton(R.string.login, new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            NoteEditActivity.this.startActivityForResult(new Intent("com.meizu.account.LOGIN"), NoteEditActivity.REQUEST_CODE_LOGIN);
-                                            NoteEditActivity.this.mRequestCode = NoteEditActivity.REQUEST_CODE_LOGIN;
-                                        }
-                                    });
-                                    builder.setNegativeButton("取消", null);
-*//**//*                                    builder.setOnDismissListener(new OnDismissListener() {
-                                        public void onDismiss(DialogInterface dialogInterface) {
-                                            NoteEditActivity.this.mTagSpinner.setSelection(NoteEditActivity.this.getTagIndex());
-                                        }
-                                    });*//**//*
-                                    builder.show().getButton(-1).setTextColor(NoteEditActivity.this.getResources().getColorStateList(R.color.mz_button_text_color_coral));
-                                    NoteEditActivity.this.dismissPopupIfShown();
-                                    return;
-                                }*//* else {
-                                    Intent intent = new Intent("com.meizu.account.VALIDATEPASSWORD");
-                                    intent.putExtra("Validate_Title", NoteEditActivity.this.getString(R.string.encrypt_cofirm));
-                                    NoteEditActivity.this.startActivityForResult(intent, NoteEditActivity.REQUEST_CODE_VERIFY);
-                                    NoteEditActivity.this.mRequestCode = NoteEditActivity.REQUEST_CODE_VERIFY;
-                                    NoteEditActivity.this.dismissPopupIfShown();
-                                }
-                            }
-                        } else if (ti.id != -3) {
-                            NoteEditActivity noteEditActivity;
-                            NoteEditActivity.this.mEditNote.mTag = ti.id;
-                            if (TagData.FUN_ENCRYPT && NoteEditActivity.this.mEditNote.mEncrypt) {
-                                NoteEditActivity.this.mEditNote.mEncrypt = false;
-                                noteEditActivity = NoteEditActivity.this;
-                                noteEditActivity.mChanged |= NoteEditActivity.CHANGE_ENCRYPT;
-                            }
-                            noteEditActivity = NoteEditActivity.this;
-                            noteEditActivity.mChanged |= NoteEditActivity.CHANGE_TAG;
-                        } else if (NoteEditActivity.this.mTagList.size() >= 11) {
-                            Toast.makeText(NoteEditActivity.this, R.string.toast_tag_limit, Toast.LENGTH_SHORT).show();
-                            NoteEditActivity.this.dismissPopupIfShown();
-                            NoteEditActivity.this.mTagSpinner.setSelection(NoteEditActivity.this.getTagIndex());
-                            return;
-                        } else {
-                            DialogInterface.OnClickListener confirmListener = new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    String tag = NoteEditActivity.this.mTagEditor.getText().toString().trim();
-                                    if (TextUtils.isEmpty(tag)) {
-                                        Toast.makeText(NoteEditActivity.this, R.string.folder_null_not_save, Toast.LENGTH_SHORT).show();
-                                        return;
-                                    }
-                                    NoteEditActivity noteEditActivity;
-                                    int count = NoteEditActivity.this.mTagList.size();
-                                    for (int index = NoteEditActivity.REQUEST_CODE_PICK; index < count - 1; index += NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC) {
-                                        if (tag.equals(((TagInfo) NoteEditActivity.this.mTagList.get(index)).name)) {
-                                            Toast.makeText(NoteEditActivity.this, R.string.folder_already_exsite, Toast.LENGTH_SHORT).show();
-                                            return;
-                                        }
-                                    }
-                                    ContentValues cv = new ContentValues();
-                                    cv.put(Notes.UUID, UUID.randomUUID().toString());
-                                    cv.put(NoteCategory.CATEGORY_ORDER, Integer.valueOf(count - 1));
-                                    cv.put(NoteUtil.JSON_FILE_NAME, tag);
-                                    cv.put(NoteCategory.DIRTY, Boolean.valueOf(true));
-                                    long id = ContentUris.parseId(NoteEditActivity.this.getContentResolver().insert(NoteCategory.CONTENT_URI, cv));
-                                    NoteEditActivity.this.mEditNote.mTag = id;
-                                    if (id != -1) {
-                                        Toast.makeText(NoteEditActivity.this, R.string.group_created, Toast.LENGTH_SHORT).show();
-                                        NoteEditActivity.this.queryTagList();
-                                        ArrayAdapter<TagInfo> adapter = new ArrayAdapter(NoteEditActivity.this, R.layout.tag_spinner_item, (TagInfo[]) NoteEditActivity.this.mTagList.toArray(new TagInfo[NoteEditActivity.REQUEST_CODE_PICK]));
-                                        adapter.setDropDownViewResource(R.layout.mz_select_dialog_singlechoice);
-                                        NoteEditActivity.this.mTagSpinner.setAdapter(adapter);
-                                    }
-                                    if (TagData.FUN_ENCRYPT && NoteEditActivity.this.mEditNote.mEncrypt) {
-                                        NoteEditActivity.this.mEditNote.mEncrypt = false;
-                                        noteEditActivity = NoteEditActivity.this;
-                                        noteEditActivity.mChanged |= NoteEditActivity.CHANGE_ENCRYPT;
-                                    }
-                                    noteEditActivity = NoteEditActivity.this;
-                                    noteEditActivity.mChanged |= NoteEditActivity.CHANGE_TAG;
-                                }
-                            };
-                            Builder dlg = new Builder(NoteEditActivity.this);
-                            dlg.setTitle(NoteEditActivity.this.getString(R.string.new_tag_pop));
-                            View mView = NoteEditActivity.this.getLayoutInflater().inflate(R.layout.create_tag, null);
-                            dlg.setView(mView);
-                            NoteEditActivity.this.mTagEditor = (EditText) mView.findViewById(R.id.InputText);
-                            EditText editText = NoteEditActivity.this.mTagEditor;
-                            InputFilter[] inputFilterArr = new InputFilter[NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC];
-                            inputFilterArr[NoteEditActivity.REQUEST_CODE_PICK] = new InputFilter() {
-                                public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-                                    TextPaint pt = NoteEditActivity.this.mTagEditor.getPaint();
-                                    int len = dest.length();
-                                    String s1 = dstart > 0 ? dest.subSequence(NoteEditActivity.REQUEST_CODE_PICK, dstart).toString() : BuildConfig.VERSION_NAME;
-                                    String s2 = dend < len ? dest.subSequence(dend, len).toString() : BuildConfig.VERSION_NAME;
-                                    int w = NoteEditActivity.this.getResources().getDimensionPixelSize(R.dimen.group_name_width);
-                                    if (w <= 0) {
-                                        return null;
-                                    }
-                                    while (end >= start && pt.measureText(s1 + source.subSequence(start, end) + s2) > ((float) w)) {
-                                        end--;
-                                    }
-                                    return end > start ? source.subSequence(start, end) : BuildConfig.VERSION_NAME;
-                                }
-                            };
-                            editText.setFilters(inputFilterArr);
-                            NoteEditActivity.this.mTagEditor.addTextChangedListener(NoteEditActivity.this.mTextWatch);
-                            dlg.setPositiveButton(NoteEditActivity.this.getString(R.string.ok), confirmListener);
-                            dlg.setNegativeButton(NoteEditActivity.this.getString(R.string.cancel), null);
-                            AlertDialog dialog = dlg.show();
-                            dialog.setOnDismissListener(new OnDismissListener() {
-                                public void onDismiss(DialogInterface dialog) {
-                                    NoteEditActivity.this.mTagEditor = null;
-                                    NoteEditActivity.this.mButtonSave = null;
-                                    NoteEditActivity.this.mTagSpinner.setSelection(NoteEditActivity.this.getTagIndex());
-                                }
-                            });
-                            NoteEditActivity.this.mButtonSave = dialog.getButton(-1);
-                            NoteEditActivity.this.mButtonSave.setTextColor(NoteEditActivity.this.getResources().getColorStateList(R.color.mz_button_text_color_coral));
-                            NoteEditActivity.this.mButtonSave.setEnabled(false);
-                        }
-                        NoteEditActivity.this.dismissPopupIfShown();
-                    }
-
-                    public void onNothingSelected(AdapterView<?> adapterView) {
-                    }
-                });
-            }
-        });*/
-
-        //生成创建和修改时间字符串
-        String createTime = getResources().getString(R.string.create_time) + HanziToPinyin.Token.SEPARATOR + NoteUtil.getDate(this, this.mEditNote.mCreateTime);
-        String modifyTime = getResources().getString(R.string.last_modified) + HanziToPinyin.Token.SEPARATOR + NoteUtil.getDate(this, this.mEditNote.mModifyTime);
-
-        //类型有：浮动，更新，拍照，录音
-        switch (this.mType) {
-            case NoteUtil.EDIT_TYPE_FLOAT /*-6*/:
-                if (this.mNewFlag) {
-                    this.mTailView.setText(createTime);
-                } else {
-                    this.mTailView.setText(modifyTime);
-                }
-                getWindow().setSoftInputMode(21);
-                this.mSoftInputShown = true;
-                onFocusToEdit();
-                break;
-            case NoteUtil.EDIT_TYPE_UPDATE /*-5*/:
-                this.mTailView.setText(modifyTime);
-                getWindow().setSoftInputMode(18);
-                //下面不懂
-                this.mScrollView.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
-                break;
-            case NoteUtil.EDIT_TYPE_CAMERA /*-4*/:
-            case NoteUtil.EDIT_TYPE_RECORD /*-3*/:
-                this.mTailView.setText(createTime);
-                getWindow().setSoftInputMode(18);
-                int childCount = this.mEditParent.getChildCount();
-                if (childCount > 0) {
-                    View last = this.mEditParent.getChildAt(childCount - 1);
-                    if (NoteUtil.JSON_TEXT.equals(last.getTag())) {
-                        ((NoteEditText) last.findViewById(R.id.text)).requestFocus();
-                    }
-                }
-                this.mSoftInputShown = true;
-                break;
-            case NoteUtil.EDIT_TYPE_LIST /*-2*/:
-            case -1 /*-1*/:
-                this.mTailView.setText(createTime);
-                getWindow().setSoftInputMode(21);
-                this.mSoftInputShown = true;
-                onFocusToEdit();
-                break;
-        }
-        setFirstHint();
     }
 
     private void dismissPopupIfShown() {
@@ -1206,7 +766,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //根据mFocusId来设置光标位置，和设置setSelection
     void onFocusToEdit() {
         NoteEditText edit;
-        if (!this.mGroupSwitch || this.mFocusId < -1) {
+        if (this.mFocusId < -1) {
             int childCount = this.mEditParent.getChildCount();
             if (childCount > 0) {
                 View last = this.mEditParent.getChildAt(childCount - 1);
@@ -1239,31 +799,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //设置titleView和titleToolBar
     public void initTitle() {
 
-        //设置mTitleView
-        this.mTitleView = (EditTextCloud) findViewById(R.id.title);
         //为mTitleView设置标题
         this.mTitleView.setText(this.mEditNote.mTitle);
-        //为mTitleView添加监听
-        this.mTitleView.addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            public void afterTextChanged(Editable s) {
-                NoteEditActivity.this.setTitleChanged();
-            }
-        });
         this.mTitleView.clearFocus();
-        this.mTitleView.setOnKeyPreImeListener(getKeyPreImeListener());
-        this.mTitleView.setOnFocusChangeListener(new OnFocusChangeListener() {
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (NoteEditActivity.this.mInitOK) {
-                    NoteEditActivity.this.refreshMenuState();
-                }
-            }
-        });
+
     }
 
     //着当前FocusEditView
@@ -1383,14 +922,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         JSONObject o;
         NoteItem nt;
         NoteItemText nt2;
-        //清除数据
-        this.mDataList.clear();
-        //置为空
-        this.mFocusNoteEditText = null;
-        //数量为0
-        int size = 0;
-        //json数组置为空
-        JSONArray ja = null;
+        this.mDataList.clear();//清除数据
+        this.mFocusNoteEditText = null;//置为空
+        int size = 0;//数量为0
+        JSONArray ja = null;//json数组置为空
         //mNoteData是String类型，如果有数据就加到界面中
         if (this.mEditNote.mNoteData != null) {
             //从mNoteData回复出json数组
@@ -1409,10 +944,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 o = (JSONObject) ja.opt(index);
                 nt = NoteData.getNoteItem(o);
                 addNew = false;
-                //加入数据列表
-                this.mDataList.add(nt);
-                //根据mStata判断
-                switch (nt.mState) {
+                this.mDataList.add(nt); //加入数据列表
+                switch (nt.mState) {//根据mStata判断
                     case 0 /*0*/:
                     case 1 /*1*/:
                     case 2 /*2*/:
@@ -1429,7 +962,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 }
             }
         }
-
         //如果是新加的，则添加一个NoteItemText
         if (addNew) {
             nt2 = new NoteItemText();
@@ -1638,7 +1170,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 this.mRecordingLayoutView.cancelRecording();
 
                 this.mRecordingLayoutView = null;
-                refreshMenuState();
 
                 setFirstHint();
                 this.mChanged |= CHANGE_CONTENT;
@@ -1921,19 +1452,16 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     //保存，新线程调用saveImpl();
     void save() {
-        if (this.mPauseState != REQUEST_CODE_EXPORT_TO_TEXT && this.mPauseState != REQUEST_CODE_SHARING) {
             new Thread(new Runnable() {
                 public void run() {
 //                    NoteEditActivity.this.saveImpl();
                     NoteEditActivity.this.mChanged = 0;
                 }
             }).start();
-        }
     }
 
     //按返回键，结束录音
     public void onBackPressed() {
-        this.mPauseState = 1;
         if (this.mRecordingLayoutView != null) {
             this.mRecordingLayoutView.stopRecording(false);
             this.mRecordingLayoutView = null;
@@ -2793,7 +2321,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        this.mPauseState = REQUEST_CODE_EXPORT_TO_PIC;
         if (this.mRecordingLayoutView != null) {
             this.mRecordingLayoutView.stopRecording(false);
             this.mRecordingLayoutView = null;
@@ -2850,7 +2377,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        this.mPauseState = REQUEST_CODE_LOGIN;
         if (this.mViewImageItem != null) {
             for (int index = this.mEditParent.getChildCount(); index >= 0; index--) {
                 View view = this.mEditParent.getChildAt(index);
@@ -2931,7 +2457,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             intent.putExtra("init_directory", sLastInsertDirPath);
         }
         Intent resultIntent = Intent.createChooser(intent, getResources().getText(R.string.insert_pic_title));
-        this.mPauseState = REQUEST_CODE_EXPORT_TO_TEXT;
         startActivityForResult(resultIntent, REQUEST_CODE_PICK_CAPTURE);
     }
 
@@ -2952,51 +2477,20 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        refreshMenuState();
         return super.onPrepareOptionsMenu(menu);
     }
 
     //创建OptionsMenu时
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if (menu != null) {
-            menu.clear();
-        }
-        if (this.mSoftInputShown) {
-            //当软键盘打开时，加载编辑时的菜单
-            getMenuInflater().inflate(R.menu.edit, menu);
-            this.mMenuPhoto = menu.findItem(R.id.photo);
-            this.mMenuRecord = menu.findItem(R.id.record);
-            this.mMenuList = menu.findItem(R.id.list);
-            this.mMenuDelete = menu.findItem(R.id.menu_delete);
-            this.mMenuMore = menu.findItem(R.id.more);
-        } else {
-            //当软键盘关闭时，加载浏览时菜单，一些View设置为null
-            getMenuInflater().inflate(R.menu.edit_browse, menu);
-            this.mMenuPhoto = null;
-            this.mMenuRecord = null;
-            this.mMenuList = null;
-            this.mMenuDelete = menu.findItem(R.id.menu_delete_browse);
-            this.mMenuMore = null;
-        }
-
+        getMenuInflater().inflate(R.menu.edit, menu);
+        this.mMenuDelete = menu.findItem(R.id.menu_delete);
         this.mMenuPaper = menu.findItem(R.id.menu_change_paper);//纸张
         this.mMenuShare = menu.findItem(R.id.menu_share);//分享
-        this.mMenuExport = menu.findItem(R.id.menu_export);//导出
-        this.mMenuExportPic = menu.findItem(R.id.menu_export_pic);//导出为图片
         this.mMenuTop = menu.findItem(R.id.menu_top);//置顶
-        this.mMenuFloat = menu.findItem(R.id.menu_float);//浮动？？
-        this.mMenuDesktop = menu.findItem(R.id.menu_desktop);//桌面
         if (!(this.mEditNote == null || this.mEditNote.mTopTime == 0)) {
             this.mMenuTop.setChecked(true);
         }
-        if (this.mEditNote != null && this.mEditNote.mDesktop > 0) {
-            this.mMenuDesktop.setChecked(true);
-        }
-        if (this.mEditNote != null && this.mEditNote.mEncrypt) {
-            this.mMenuDesktop.setVisible(false);
-        }
-        refreshMenuState();
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -3073,9 +2567,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     //当打开的Activity结束时
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (this.mPauseState == REQUEST_CODE_EXPORT_TO_TEXT) {
-            this.mPauseState = REQUEST_CODE_LOGIN;
-        }
 
         if (requestCode == 0) {
             Log.d(TAG, "onActivityResult: requestCode==0");
@@ -3153,8 +2644,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     break;
                 case REQUEST_CODE_LOGIN /*4*/:
                 case REQUEST_CODE_VERIFY /*5*/:
-                    this.mEditNote.mEncrypt = true;
-                    this.mEditNote.mDesktop = REQUEST_CODE_PICK;
                     this.mChanged |= CHANGE_ENCRYPT;
                     this.mChanged |= REQUEST_CODE_LOGIN;
                     break;
@@ -3166,30 +2655,86 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                         break;
                     }
                     break;
+                case 99:
+                    Log.d(TAG, "onActivityResult: "+99);
+                    Log.d(TAG, "onActivityResult: "+((NoteAppImpl)getApplication()).mSelectLabelIds.size());
+                    refreshLabel(((NoteAppImpl)getApplication()).mSelectLabelIds);
+                    showLabel();
+                    break;
             }
             super.onActivityResult(requestCode, resultCode, data);
         } else if (requestCode == REQUEST_CODE_LOGIN || requestCode == REQUEST_CODE_VERIFY) {
             this.mRequestCode = -1;
-            this.mTagSpinner.setSelection(getTagIndex());
         }
     }
 
+
+    private void refreshLabel(ArrayList<Integer> ids) {
+        ArrayList<Integer> currLabels = this.mLabel;
+        currLabels.clear();
+        currLabels.addAll(ids);
+    }
+
+    private void showLabel() {
+        if (mLabel.size()==0){
+            this.mLabelContent.setVisibility(View.INVISIBLE);
+        }
+        this.mLabelContent.setVisibility(View.VISIBLE);
+        this.mLabelContent.removeAllViews();
+        LayoutInflater inflater = getLayoutInflater();
+        ArrayList<Integer> labels = this.mLabel;
+        ArrayList<Integer> invalidLabels = new ArrayList<>();
+        Iterator i$ = labels.iterator();
+        while (i$.hasNext()) {
+            Integer id = (Integer) i$.next();
+            String label = getLabelContentById(id);
+            if (TextUtils.isEmpty(label)) {
+                invalidLabels.add(id);
+            } else {
+                TextView view = (TextView) inflater.inflate(R.layout.edit_page_label_item, null);
+                view.setText(label);
+                this.mLabelContent.addView(view);
+            }
+        }
+        if (invalidLabels.size() > 0) {
+            labels.removeAll(invalidLabels);
+        }
+        if (this.mLabelContent.getChildCount() > 0) {
+            this.mLabelView.setVisibility(View.VISIBLE);/*0*/
+        } else {
+            this.mLabelView.setVisibility(View.GONE);/*8*/
+        }
+    }
+
+
+    public String getLabelContentById(int id) {
+        Iterator i$ = ((NoteAppImpl)this.getApplication()).mlabels.iterator();
+        while (i$.hasNext()) {
+            LabelCustomActivity.LabelHolder holder = (LabelCustomActivity.LabelHolder) i$.next();
+            if (holder.mId == id) {
+                return holder.mContent;
+            }
+        }
+        return null;
+    }
+
+
     //在数据库中插入File
     public void insertFileInDataBase(final String uuid, final String name, final int type) {
-        new Thread(new Runnable() {
-            public void run() {
-                ContentValues value = new ContentValues();
-                value.put(NoteUtil.JSON_FILE_NAME, name);
-                value.put(NoteFiles.NOTE_UUID, uuid);
-                File file = NoteUtil.getFile(uuid, name);
-                //调用的函数被删除了
-//                value.put(NoteFiles.MD5, NoteUtil.md5sum(file.getPath()));
-                value.put(NoteUtil.JSON_MTIME, Long.valueOf(file.lastModified()));
-                value.put(Constants.JSON_KEY_TYPE, Integer.valueOf(type));
-                //Unknown URL content://com.meizu.flyme.notepaper.NotePaper/notefiles
-                NoteEditActivity.this.getContentResolver().insert(NoteFiles.CONTENT_URI, value);
-            }
-        }).start();
+//        new Thread(new Runnable() {
+//            public void run() {
+//                ContentValues value = new ContentValues();
+//                value.put(NoteUtil.JSON_FILE_NAME, name);
+//                value.put(NoteFiles.NOTE_UUID, uuid);
+//                File file = NoteUtil.getFile(uuid, name);
+//                //调用的函数被删除了
+////                value.put(NoteFiles.MD5, NoteUtil.md5sum(file.getPath()));
+//                value.put(NoteUtil.JSON_MTIME, Long.valueOf(file.lastModified()));
+//                value.put(Constants.JSON_KEY_TYPE, Integer.valueOf(type));
+//                //Unknown URL content://com.meizu.flyme.notepaper.NotePaper/notefiles
+//                NoteEditActivity.this.getContentResolver().insert(NoteFiles.CONTENT_URI, value);
+//            }
+//        }).start();
     }
 
     //从数据库中删除file
@@ -3197,7 +2742,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         new Thread(new Runnable() {
             public void run() {
 
-                NoteEditActivity.this.getContentResolver().delete(NoteFiles.CONTENT_URI, "name = \"" + name + "\"" + " and " + NoteFiles.NOTE_UUID + " = \"" + uuid + "\"", null);
+//                NoteEditActivity.this.getContentResolver().delete(NoteFiles.CONTENT_URI, "name = \"" + name + "\"" + " and " + NoteFiles.NOTE_UUID + " = \"" + uuid + "\"", null);
             }
         }).start();
     }
@@ -4010,70 +3555,20 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //当选择菜单中的选项时，有：录音，清单，照片，置顶等
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int count;
-        int index;
         switch (item.getItemId()) {
-            //返回上一页？？
-            case 16908332:
-                onBackPressed();
-                return true;
-            //点击录音时
-            case R.id.record://
-                if (this.mRecordingLayoutView == null && checkSdcardOK()) {
-//                    MobEventUtil.onSendMobEvent(this, "click_voice_button", null);
-                    count = this.mEditParent.getChildCount();
-                    int recordCount = 0;
-                    //遍历所有的Noteitem，计算record的个数，当个数大于等于10的时候返回
-                    for (index = 0; index < count; index += 1) {
-                        if ("record".equals(this.mEditParent.getChildAt(index).getTag())) {
-                            recordCount += 1;
-                            if (recordCount >= 10) {
-                                Toast.makeText(this, R.string.record_limit_tip, REQUEST_CODE_PICK).show();
-                                return true;
-                            }
-                        }
-                    }
-                    //录音个数小于10时，就录音
-                    onRecord();
-                }
-                break;
-            case R.id.list:
-                if (this.mRecordingLayoutView == null || !this.mRecordingLayoutView.isRecording()) {
-//                    MobEventUtil.onSendMobEvent(this, "click_list_button", null);
-                    onListMenuClick();
-                    break;
-                }
-            case R.id.photo:
-                if ((this.mRecordingLayoutView == null || !this.mRecordingLayoutView.isRecording()) && checkSdcardOK()) {
-                    count = this.mEditParent.getChildCount();
-                    int picCount = 0;
-                    for (index = 0; index < count; index += 1) {
-                        if ("image".equals(this.mEditParent.getChildAt(index).getTag())) {
-                            picCount += 1;
-                            if (picCount >= 10) {
-                                Toast.makeText(this, R.string.image_limit_tip, REQUEST_CODE_PICK).show();
-                                return true;
-                            }
-                        }
-                    }
-                    onInsertImage();
-                    break;
-                }
             case R.id.menu_top:
                 if (item.isChecked()) {
                     this.mEditNote.mTopTime = 0;
                     item.setChecked(false);
-                    Toast.makeText(this, R.string.top_cancel, REQUEST_CODE_PICK).show();
+                    Toast.makeText(this, R.string.top_cancel, Toast.LENGTH_SHORT).show();
                 } else {
                     this.mEditNote.mTopTime = System.currentTimeMillis();
                     item.setChecked(true);
-                    Toast.makeText(this, R.string.top_success, REQUEST_CODE_PICK).show();
-//                    MobEventUtil.onSendMobEvent(this, "click_menu_movetop", (String) REQUEST_CODE_PICK);
+                    Toast.makeText(this, R.string.top_success, Toast.LENGTH_SHORT).show();
                 }
                 this.mChanged |= REQUEST_CODE_EXPORT_TO_TEXT;
                 break;
             case R.id.menu_share:
-//                MobEventUtil.onSendMobEvent(this, "share", (String) REQUEST_CODE_PICK);
                 if (this.mShareIntent == null) {
                     if (checkSdcardOK()) {
                         popupProgressDialog(R.string.create_sharing);
@@ -4090,78 +3585,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             case R.id.menu_change_paper:
                 onBackgroundMenuClick();
                 break;
-            case R.id.menu_desktop:
-                if (item.isChecked()) {
-                    this.mEditNote.mDesktop = REQUEST_CODE_PICK;
-                    item.setChecked(false);
-                    Toast.makeText(this, R.string.desktop_cancel, REQUEST_CODE_PICK).show();
-//                    MobEventUtil.onSendMobEvent(this, "click_menu_desktop_cancel", (String) REQUEST_CODE_PICK);
-                } else {
-                    this.mEditNote.mDesktop = REQUEST_CODE_EXPORT_TO_PIC;
-                    item.setChecked(true);
-                    Toast.makeText(this, R.string.desktop_success, REQUEST_CODE_PICK).show();
-//                    MobEventUtil.onSendMobEvent(this, "click_menu_desktop", (String) REQUEST_CODE_PICK);
-                }
-                this.mChanged |= REQUEST_CODE_LOGIN;
-                //通知更新桌面窗口
-//                ((NoteApplication) getApplication()).notifyWidgetUpdate();
-                break;
-            //难道是浮动窗口
-            case R.id.menu_float:
-                this.mFloatFlag = true;
-//                MobEventUtil.onSendMobEvent(this, "click_menu_modalwin", (String) REQUEST_CODE_PICK);
-                if (this.mTitleView.isFocused()) {
-                    this.mFocusId = -1;
-                    this.mSelectStart = this.mTitleView.getSelectionStart();
-                } else {
-                    View v;
-                    int i = REQUEST_CODE_PICK;
-                    while (i < this.mEditParent.getChildCount()) {
-                        if (this.mEditParent.getChildAt(i).hasFocus()) {
-                            this.mFocusId = i;
-                            if (this.mFocusId > -1) {
-                                v = this.mEditParent.getChildAt(this.mFocusId);
-                                if (NoteUtil.JSON_TEXT.equals((String) v.getTag())) {
-                                    this.mSelectStart = ((NoteEditText) v.findViewById(R.id.text)).getSelectionStart();
-                                }
-                            }
-                        } else {
-                            i += REQUEST_CODE_EXPORT_TO_PIC;
-                        }
-                    }
-                    if (this.mFocusId > -1) {
-                        v = this.mEditParent.getChildAt(this.mFocusId);
-                        if (NoteUtil.JSON_TEXT.equals((String) v.getTag())) {
-                            this.mSelectStart = ((NoteEditText) v.findViewById(R.id.text)).getSelectionStart();
-                        }
-                    }
-                }
-                //关闭程序
-//                ((NoteApplication) getApplication()).exit();
-                break;
             case R.id.menu_delete:
                 onDeleteMenuClicked();
-                break;
-            case R.id.menu_export_pic:
-            case R.id.submenu_export_pic:
-                if (!checkEmpty()) {
-                    if (checkSdcardOK()) {
-//                        MobEventUtil.onSendMobEvent(this, "export", (String) REQUEST_CODE_PICK);
-                        exportTo(REQUEST_CODE_EXPORT_TO_PIC);
-                        break;
-                    }
-                }
-                Toast.makeText(this, R.string.tip_empty_content, REQUEST_CODE_PICK).show();
-                break;
-            case R.id.submenu_export_text:
-                if (checkSdcardOK()) {
-//                    MobEventUtil.onSendMobEvent(this, "export", (String) REQUEST_CODE_PICK);
-                    exportTo(REQUEST_CODE_EXPORT_TO_TEXT);
-                    break;
-                }
-                break;
-            case R.id.menu_delete_browse:
-                onDeleteBrowseMenuClicked();
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -4176,7 +3601,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         Log.d(TAG, "onRecordResult");
         if (this.mRecordingLayoutView != null) {
             this.mRecordingLayoutView = null;
-            refreshMenuState();
 
             if (fileName != null) {
                 File file = NoteUtil.getFile(this.mEditNote.mUUId, fileName);
@@ -4229,103 +3653,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
         setFirstHint();
         this.mChanged |= CHANGE_CONTENT;
-    }
-
-    //更新菜单？？隐藏或显示一些
-    void updateTextMenu() {
-        boolean hasText = false;
-        boolean hasRich = false;
-        if (this.mTitleView != null && this.mTitleView.getText() != null && this.mTitleView.getText().length() > 0) {
-            hasText = true;
-            hasRich = true;
-        } else if (this.mEditParent != null) {
-            int childCount = this.mEditParent.getChildCount();
-            for (int index = REQUEST_CODE_PICK; index < childCount; index += REQUEST_CODE_EXPORT_TO_PIC) {
-                View view = this.mEditParent.getChildAt(index);
-                if (NoteUtil.JSON_TEXT.equals((String) view.getTag())) {
-                    NoteEditText edit = (NoteEditText) view.findViewById(R.id.text);
-                    String item = edit.getText() == null ? BuildConfig.VERSION_NAME : edit.getText().toString();
-                    if (!(item == null || item.length() == 0)) {
-                        hasText = true;
-                        hasRich = true;
-                        break;
-                    }
-                }
-                hasRich = true;
-            }
-        }
-        if (hasText) {
-            if (this.mMenuShare != null) {
-                this.mMenuShare.setVisible(true);
-            }
-        } else if (hasRich) {
-            if (this.mMenuShare != null) {
-                this.mMenuShare.setVisible(true);
-            }
-        } else if (this.mMenuShare != null) {
-            this.mMenuShare.setVisible(false);
-        }
-    }
-
-    //改变菜单显示样式，那些隐藏，那些出现
-    public void refreshMenuState() {
-        if (this.mMenuShare != null) {
-            if (this.mSoftInputShown) {
-                if (this.mRecordingLayoutView == null || !this.mRecordingLayoutView.isRecording()) {
-                    if (this.mMenuMore != null && this.mMenuMore.isVisible()) {
-                        this.mMenuMore.setVisible(false);
-                    }
-                    if (this.mMenuPhoto != null) {
-                        this.mMenuPhoto.setEnabled(true);
-                        if (this.mRecordingLayoutView != null) {
-                            this.mMenuRecord.setEnabled(false);
-                        } else {
-                            this.mMenuRecord.setEnabled(true);
-                        }
-                        this.mMenuList.setEnabled(true);
-                        this.mMenuPaper.setVisible(true);
-                        this.mMenuTop.setVisible(true);
-                        if (!(this.mEditNote == null || this.mEditNote.mTopTime == 0)) {
-                            this.mMenuTop.setChecked(true);
-                        }
-                        this.mMenuDesktop.setVisible(true);
-                        if (!(this.mEditNote == null || this.mEditNote.mDesktop == 0)) {
-                            this.mMenuDesktop.setChecked(true);
-                        }
-                        if (this.mEditNote != null && this.mEditNote.mEncrypt) {
-                            this.mMenuDesktop.setVisible(false);
-                        }
-                        updateTextMenu();
-                        this.mMenuMore.setEnabled(true);
-                    }
-                    updateTextMenu();
-                } else {
-                    this.mMenuPhoto.setEnabled(false);
-                    this.mMenuRecord.setEnabled(false);
-                    this.mMenuList.setEnabled(false);
-                    this.mMenuPaper.setVisible(false);
-                    this.mMenuShare.setVisible(false);
-                    this.mMenuTop.setVisible(false);
-                    this.mMenuDesktop.setVisible(false);
-                    this.mMenuMore.setVisible(true);
-                    this.mMenuMore.setEnabled(false);
-                }
-                if (!this.mGroupSwitch) {
-                    this.mMenuTop.setVisible(false);
-                    return;
-                }
-                return;
-            }
-            updateTextMenu();
-            if (!TagData.FUN_ENCRYPT) {
-                return;
-            }
-            if (this.mEditNote == null || !this.mEditNote.mEncrypt) {
-                this.mMenuDesktop.setVisible(true);
-            } else {
-                this.mMenuDesktop.setVisible(false);
-            }
-        }
     }
 
     //打开软键盘
@@ -4429,20 +3756,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         return this.mRecordingLayoutView;
     }
 
-    //没搞懂
-    int getTagIndex() {
-        for (int index = 1; index < this.mTagList.size() - 1; index += 1) {
-            TagInfo ti = (TagInfo) this.mTagList.get(index);
-            if (TagData.FUN_ENCRYPT && this.mEditNote.mEncrypt) {
-                if (ti.id == -2) {
-                    return index;
-                }
-            } else if (this.mEditNote.mTag == ti.id) {
-                return index;
-            }
-        }
-        return 0;
-    }
+
+
 
     //listCount 好像是文本控件的数量在100以内返回true
     boolean listCountCheck() {
@@ -4521,11 +3836,13 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     intent.putExtra("init_directory", sLastInsertDirPath);
                 }
                 Intent resultIntent = Intent.createChooser(intent, getResources().getText(R.string.insert_pic_title));
-                this.mPauseState = REQUEST_CODE_EXPORT_TO_TEXT;
                 startActivityForResult(resultIntent, REQUEST_CODE_PICK);
                 break;
 
             case R.id.action_label:
+                Intent i= new Intent();
+                i.setClass(NoteEditActivity.this, LabelCustomActivity.class);
+                startActivityForResult(i,99);
                 return;
             case R.id.action_recorde:
                 if (this.mRecordingLayoutView == null && checkSdcardOK()) {

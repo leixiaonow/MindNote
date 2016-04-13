@@ -208,4 +208,11 @@
     <item type="id" name="action_top">false</item>
     <item type="id" name="action_send_desktop">false</item>
     <item type="id" name="done">false</item>
+
+
+    <item name="label_custom_edit_text" type="id">false</item>
+    <item name="label_custom_edit_button" type="id">false</item>
+    <item name="label_custom_list" type="id">false</item>
+    <item name="label_custom_list_item_delete" type="id">false</item>
+    <item name="label_custom_list_item_text" type="id">false</item>
 </resources>

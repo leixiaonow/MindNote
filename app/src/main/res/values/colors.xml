@@ -123,5 +123,32 @@
 
 
     <color name="note_edit_text_line_color">#36bca47e</color>
+    <color name="amigo_bright_foreground_primary_dark">#cc000000</color>
+    <color name="amigo_bright_foreground_primary_light">#ffffffff</color>
+    <color name="amigo_bright_foreground_secondary_dark">#66000000</color>
+    <color name="amigo_bright_foreground_secondary_light">#ccffffff</color>
+    <color name="amigo_bright_foreground_tertiary_dark">#33000000</color>
+    <color name="amigo_bright_foreground_tertiary_light">#50ffffff</color>
+    <color name="amigo_bright_foreground_yellow">#ffff9000</color>
+    <color name="amigo_btn_default_pressed_color">#50808080</color>
+    <color name="amigo_button_disabled_bg_color">#10808080</color>
+    <color name="amigo_confirm_dialog_cancel_text_color">#6b5b4e</color>
+    <color name="amigo_confirm_dialog_message_text_color">#6b5b4e</color>
+    <color name="amigo_determinate_progress_background_color">#6b5b4e</color>
+    <color name="amigo_determinate_progress_dialog_cancel_text_color">#6b5b4e</color>
+    <color name="amigo_determinate_progress_dialog_message_text_color">#6b5b4e</color>
+    <color name="amigo_dim_foreground_primary_dark">#50222222</color>
+    <color name="setting_list_item_text_color_press">#6b5b4e</color>
+    <color name="label_custom_list_item_text_color_no_press">#6b5b4e</color>
+    <color name="abstract_note_activity_root_bg_color">#f1f0e8</color>
+    <color name="label_custom_edit_text_background">#0c000000</color>
+    <color name="label_custom_list_item_text_color">#6b5b4e</color>
+    <color name="label_custom_edit_text_hint_color">#806b5b4e</color>
+    <color name="system_stress_color">#ff9000</color>
+    <color name="label_custom_edit_button_unable_color">#dbd0c9</color>
+    <color name="dialog_background">#f8f8f4</color>
+    <color name="label_selector_dialog_list_item_text_color_normal">#6b5b4e</color>
+    <color name="edit_note_label_item_text_color">#ab9d98</color>
+
 
 </resources>

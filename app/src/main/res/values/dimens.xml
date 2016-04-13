@@ -545,4 +545,33 @@
     <dimen name="edit_note_label_item_vertical_margin">9dp</dimen>
 
 
+    <dimen name="label_custom_edit_height">32dp</dimen>
+    <dimen name="label_custom_edit_margin_bottom">12dp</dimen>
+    <dimen name="label_custom_edit_margin_left">16dp</dimen>
+    <dimen name="label_custom_edit_margin_right">16dp</dimen>
+    <dimen name="label_custom_edit_margin_top">12dp</dimen>
+    <dimen name="label_custom_edit_text_padding_left">8dp</dimen>
+    <dimen name="label_custom_edit_text_size">14sp</dimen>
+    <dimen name="label_custom_list_item_height">56dp</dimen>
+    <dimen name="label_custom_list_item_padding_left">20dp</dimen>
+    <dimen name="label_custom_list_item_padding_right">4dp</dimen>
+    <dimen name="label_custom_list_item_text_size">18sp</dimen>
+    <dimen name="label_custom_title_layout_back_icon_width">50dp</dimen>
+    <dimen name="label_custom_title_layout_text_left_margin">20dp</dimen>
+    <dimen name="label_custom_title_layout_text_size">18sp</dimen>
+    <dimen name="edit_note_item_cursor_width">2dp</dimen>
+    <dimen name="amigo_confirm_dialog_button_margin">8dp</dimen>
+    <dimen name="amigo_confirm_dialog_button_text_size">16sp</dimen>
+    <dimen name="amigo_confirm_dialog_button_height">52dp</dimen>
+    <dimen name="label_selector_dialog_button_text_size">18sp</dimen>
+    <dimen name="label_selector_dialog_button_height">52dp</dimen>
+    <dimen name="label_selector_dialog_list_item_height">56dp</dimen>
+    <dimen name="label_selector_dialog_checkbox_width">56dp</dimen>
+    <dimen name="label_selector_dialog_padding_left">20dp</dimen>
+    <dimen name="label_selector_dialog_list_item_text_size">16sp</dimen>
+    <dimen name="edit_note_label_item_text_horizon_padding">10dp</dimen>
+    <dimen name="edit_note_label_item_text_size">12sp</dimen>
+    <dimen name="edit_note_label_item_height">19dp</dimen>
+
+
 </resources>

@@ -45,7 +45,6 @@ public class RecordingLayout extends RelativeLayout {
     Runnable mUpdateRecordDisplay = new Runnable() {
         public void run() {
             RecordingLayout.this.setVisibility(VISIBLE);
-            ((NoteEditActivity) RecordingLayout.this.getContext()).refreshMenuState();
         }
     };
     Runnable mUpdateRecordTimer = new Runnable() {
@@ -123,7 +122,6 @@ public class RecordingLayout extends RelativeLayout {
                     RecordingLayout.this.mRecordHandler.postDelayed(RecordingLayout.this.mUpdateRecordTimer, 10);
                     RecordingLayout.this.mPauseBtn.setImageResource(R.drawable.mz_ic_pause);
                 }
-                ((NoteEditActivity) RecordingLayout.this.getContext()).refreshMenuState();
             }
         });
     }
@@ -181,8 +179,10 @@ public class RecordingLayout extends RelativeLayout {
                 if (RecordingLayout.this.mMediaRecorder == null) {
                     RecordingLayout.this.mMediaRecorder = new MediaRecorder();
                     RecordingLayout.this.mMediaRecorder.setAudioSource(RecordingLayout.STATE_RECORDING);
-                    RecordingLayout.this.mMediaRecorder.setOutputFormat(ReflectUtils.getStaticIntValue("android.media.MediaRecorder$OutputFormat", "MPEG_3", 9));
-                    RecordingLayout.this.mMediaRecorder.setAudioEncoder(ReflectUtils.getStaticIntValue("android.media.MediaRecorder$AudioEncoder", "MPEG_3", 6));
+//                    RecordingLayout.this.mMediaRecorder.setOutputFormat(ReflectUtils.getStaticIntValue("android.media.MediaRecorder$OutputFormat", "MPEG_3", 9));
+//                    RecordingLayout.this.mMediaRecorder.setAudioEncoder(ReflectUtils.getStaticIntValue("android.media.MediaRecorder$AudioEncoder", "MPEG_3", 6));
+                    RecordingLayout.this.mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                    RecordingLayout.this.mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
                     File file = RecordingLayout.this.getNewRecordFile();
                     if (file == null) {
                         Log.d(toString(), "no file return");
@@ -234,7 +234,7 @@ public class RecordingLayout extends RelativeLayout {
 
     public void updateTimerView() {
         if (this.mMediaRecorder != null) {
-            long time = (this.mRecordingFile.length() / 8) / 1000;
+            long time = (this.mRecordingFile.length()/2) / 1000;
             this.mDigitTimer.setText(RecordUtil.timeConvert(time));
             if (time >= 599) {
                 this.mRecordHandler.removeCallbacks(this.mUpdateRecordTimer);

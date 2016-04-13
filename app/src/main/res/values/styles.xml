@@ -31,4 +31,17 @@
     </style>
 
 
+    <style name="label_custom_edit_button_style" parent="@style/noteCardChickBgEffect" />
+
+    <style name="noteCardChickBgEffect">
+        <item name="android:background">@drawable/note_card_chick_bg_dw</item>
+    </style>
+
+    <style name="ListSelectorEffect">
+        <item name="android:listSelector">@drawable/chick_effect_bg_dw</item>
+    </style>
+
+    <style name="ChickBgEffect">
+        <item name="android:background">@drawable/chick_effect_bg_dw</item>
+    </style>
 </resources>

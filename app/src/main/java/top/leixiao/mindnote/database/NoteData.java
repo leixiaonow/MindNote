@@ -10,37 +10,42 @@ import org.json.JSONObject;
 
 import java.io.Serializable;
 
-import top.leixiao.mindnote.database.NotePaper.NoteFiles;
 import top.leixiao.mindnote.database.NotePaper.Notes;
 import top.leixiao.mindnote.utils.NoteUtil;
 
 public class NoteData implements Serializable {
-    public static final String[] NOTES_PROJECTION = new String[]{NoteFiles.DEFAULT_SORT_ORDER, NotePaper.Notes.TITLE, Notes.CREATE_TIME, Notes.MODIFIED_DATE, Notes.NOTE, Notes.PAPER, Notes.UUID, Notes.FONT_COLOR, Notes.FONT_SIZE, Notes.FIRST_IMAGE, Notes.FIRST_RECORD, Notes.ENCRYPT, Notes.TAG, Notes.TOP, Notes.DESKTOP};
+    public static final String[] NOTES_PROJECTION = new String[]{"_id", NotePaper.Notes.TITLE, Notes.CREATE_TIME, Notes.MODIFIED_DATE, Notes.NOTE, Notes.PAPER, Notes.UUID, Notes.FONT_COLOR, Notes.FONT_SIZE, Notes.FIRST_IMAGE, Notes.FIRST_RECORD, Notes.CATEGORY, Notes.TOP,Notes.COLOR};
     public static int DEFAULT_FONT_SIZE = 18;
-    public long mCreateTime;
-    public int mDesktop;
-    public boolean mEncrypt;
+    public long mId = -1;
+
+    public String mUUId;
+    public String mTitle;
+    public String mNoteData;
     public String mFirstImg;
     public String mFirstRecord;
-    public long mId = -1;
-    public long mModifyTime;
-    public String mNoteData;
-    public int mPaper;
+
     public long mTag;
-    public int mTextColor = ViewCompat.MEASURED_STATE_MASK;
-    public int mTextSize = DEFAULT_FONT_SIZE;
-    public String mTitle;
+    public long mCreateTime;
+    public long mModifyTime;
     public long mTopTime;
-    public String mUUId;
+    public int mColor;
+
+    public int mPaper;
+    public int mTextColor = 0xff000000;
+    public int mTextSize = DEFAULT_FONT_SIZE;
+
+
+
 
     //从数据库Cursor创建NoteData对象，静态方法
     public static NoteData getItem(Cursor cursor) {
         NoteData nd = new NoteData();
-        nd.mId = cursor.getLong(cursor.getColumnIndex(NoteFiles.DEFAULT_SORT_ORDER));
+        nd.mId = cursor.getLong(cursor.getColumnIndex("_id"));
         nd.mUUId = cursor.getString(cursor.getColumnIndex(Notes.UUID));
         nd.mPaper = cursor.getInt(cursor.getColumnIndex(Notes.PAPER));
         nd.mCreateTime = cursor.getLong(cursor.getColumnIndex(Notes.CREATE_TIME));
         nd.mModifyTime = cursor.getLong(cursor.getColumnIndex(Notes.MODIFIED_DATE));
+        nd.mColor = cursor.getInt(cursor.getColumnIndex(Notes.COLOR));
         nd.mTextColor = cursor.getInt(cursor.getColumnIndex(Notes.FONT_COLOR));
         if (nd.mTextColor == 0) {
             nd.mTextColor = ViewCompat.MEASURED_STATE_MASK;
@@ -53,7 +58,6 @@ public class NoteData implements Serializable {
         nd.mNoteData = cursor.getString(cursor.getColumnIndex(Notes.NOTE));
         nd.mFirstImg = cursor.getString(cursor.getColumnIndex(Notes.FIRST_IMAGE));
         nd.mFirstRecord = cursor.getString(cursor.getColumnIndex(Notes.FIRST_RECORD));
-        nd.mEncrypt = cursor.getInt(cursor.getColumnIndex(Notes.ENCRYPT)) != 0;
         if (nd.mFirstImg != null && nd.mFirstImg.length() == 0) {
             nd.mFirstImg = null;
         }
@@ -61,9 +65,8 @@ public class NoteData implements Serializable {
             nd.mFirstRecord = null;
         }
         try {
-            nd.mTag = cursor.getLong(cursor.getColumnIndex(Notes.TAG));
+            nd.mTag = cursor.getLong(cursor.getColumnIndex(Notes.CATEGORY));
             nd.mTopTime = cursor.getLong(cursor.getColumnIndex(Notes.TOP));
-            nd.mDesktop = cursor.getInt(cursor.getColumnIndex(Notes.DESKTOP));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -76,7 +79,7 @@ public class NoteData implements Serializable {
             Object o = jo.opt(NoteUtil.JSON_STATE);
             int state = 0;
             if (o != null && (o instanceof Integer)) {
-                state = ((Integer) o).intValue();
+                state = (Integer) o;
             }
             switch (state) {
                 case 0 /*0*/:
@@ -98,11 +101,11 @@ public class NoteData implements Serializable {
                     nii.mState = state;
                     o = jo.opt(NoteUtil.JSON_IMAGE_HEIGHT);
                     if (o != null && (o instanceof Integer)) {
-                        nii.mHeight = ((Integer) o).intValue();
+                        nii.mHeight = (Integer) o;
                     }
                     o = jo.opt(NoteUtil.JSON_IMAGE_WIDTH);
                     if (o != null && (o instanceof Integer)) {
-                        nii.mWidth = ((Integer) o).intValue();
+                        nii.mWidth = (Integer) o;
                     }
                     o = jo.opt(NoteUtil.JSON_FILE_NAME);
                     if (o == null || !(o instanceof String)) {
@@ -136,11 +139,11 @@ public class NoteData implements Serializable {
                     noteItemImage.mState = 3;
                     Object o = jo.opt(NoteUtil.JSON_IMAGE_HEIGHT);
                     if (o != null && (o instanceof Integer)) {
-                        noteItemImage.mHeight = ((Integer) o).intValue();
+                        noteItemImage.mHeight = (Integer) o;
                     }
                     o = jo.opt(NoteUtil.JSON_IMAGE_WIDTH);
                     if (o != null && (o instanceof Integer)) {
-                        noteItemImage.mWidth = ((Integer) o).intValue();
+                        noteItemImage.mWidth = (Integer) o;
                     }
                     o = jo.opt(NoteUtil.JSON_FILE_NAME);
                     if (o != null && (o instanceof String)) {
