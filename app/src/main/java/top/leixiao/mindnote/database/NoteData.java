@@ -24,7 +24,7 @@ public class NoteData implements Serializable {
     public String mFirstImg;
     public String mFirstRecord;
 
-    public long mTag;
+    public long mCategory;
     public long mCreateTime;
     public long mModifyTime;
     public long mTopTime;
@@ -65,7 +65,7 @@ public class NoteData implements Serializable {
             nd.mFirstRecord = null;
         }
         try {
-            nd.mTag = cursor.getLong(cursor.getColumnIndex(Notes.CATEGORY));
+            nd.mCategory = cursor.getLong(cursor.getColumnIndex(Notes.CATEGORY));
             nd.mTopTime = cursor.getLong(cursor.getColumnIndex(Notes.TOP));
         } catch (Exception e) {
             e.printStackTrace();

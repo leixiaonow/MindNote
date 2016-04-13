@@ -656,7 +656,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
             this.mPosition = -1; //设置位置mPosition
             this.mEditNote.mId = -1;//设置mEditNote.mId
-            this.mEditNote.mTag = tag;//设置tag
+            this.mEditNote.mCategory = tag;//设置tag
             this.mEditNote.mTopTime = 0; //设置置顶时间为0
             this.mEditNote.mCreateTime = System.currentTimeMillis();//设置创建时间
             this.mNewFlag = true;//新建笔记设为true
@@ -1602,6 +1602,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     }
                     fileList.add(nt3.mFileName);
                 }
+
+
                 bw.close();
 
 
@@ -1645,8 +1647,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 cv = new ContentValues();
 //                如果是新建笔记
                 if (this.mEditNote.mId == -1) {//设置ContentValues
-
-
                     cv.put(Notes.TITLE, this.mEditNote.mTitle);
                     cv.put(Notes.NOTE, convert2JsonNoteText());
                     now = System.currentTimeMillis();
@@ -1657,22 +1657,18 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     cv.put(Notes.UUID, this.mEditNote.mUUId);
                     cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
                     cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                    cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-                    cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
+//                    cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
+                    cv.put(Notes.CATEGORY, this.mEditNote.mCategory);
 
                     if ((this.mChanged & 2) != 0) {
-                        cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
+                        cv.put(Notes.TOP, this.mEditNote.mTopTime);
                     }
-                    app = (NoteApplication) getApplication();
-                    changedList = new ArrayList<>();
-                    changedList.add(0);
-                    app.setChangedData(1, changedList);
                     this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
                     this.mEditNote.mFirstImg = this.mFirstImg;
                     this.mEditNote.mFirstRecord = this.mFirstRecord;
                     return;
                 }
-                /////不是新建笔记，并且有改动
+                /////不是新建笔记，并且有改动，只更新改动的部分
                 if (this.mChanged != 0) {
                     noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
                     if ((this.mChanged & REQUEST_CODE_EXPORT_TO_PIC) != 0) {
@@ -1680,51 +1676,31 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     }
                     if ((this.mChanged & CHANGE_CONTENT) != 0) {
                         cv.put(Notes.NOTE, convert2JsonNoteText());
-                        app = (NoteApplication) getApplication();
                         if (this.mEditNote.mFirstImg == null) {
                         }
                         cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-                        app.onNoteImgChanged(this.mEditNote.mUUId);
                         if (this.mEditNote.mFirstRecord == null) {
                         }
                         cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
-                        cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
+//                        cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
                     }
-                    now = Long.valueOf(System.currentTimeMillis());
+                    now = System.currentTimeMillis();
                     if ((this.mChanged & -1048591) != 0) {
                         cv.put(Notes.MODIFIED_DATE, now);
                     }
                     if ((this.mChanged & CHANGE_PAPER) != 0) {
-                        cv.put(Notes.PAPER, Integer.valueOf(this.mEditNote.mPaper));
+                        cv.put(Notes.PAPER, this.mEditNote.mPaper);
                     }
                     if ((this.mChanged & CHANGE_FONT_COLOR) != 0) {
                     }
                     if ((this.mChanged & CHANGE_FONT_SIZE) != 0) {
-                        cv.put(Notes.FONT_SIZE, Integer.valueOf(this.mEditNote.mTextSize));
-                        MobEventUtil.onSendMobEvent(this, "change_font_size", (String) null);
+                        cv.put(Notes.FONT_SIZE, this.mEditNote.mTextSize);
                     }
                     if ((this.mChanged & CHANGE_TAG) != 0) {
-                        cv.put(Notes.TAG, Long.valueOf(this.mEditNote.mTag));
-                        if (this.mEditNote.mTag > 0) {
-                            MobEventUtil.onSendMobEvent(this, "click_modifygroup", (String) null);
-                        }
+                        cv.put(Notes.CATEGORY, this.mEditNote.mCategory);
                     }
                     if ((this.mChanged & REQUEST_CODE_EXPORT_TO_TEXT) != 0) {
-                        cv.put(Notes.TOP, Long.valueOf(this.mEditNote.mTopTime));
-                    }
-                    if ((this.mChanged & REQUEST_CODE_LOGIN) != 0) {
-                        cv.put(Notes.DESKTOP, Integer.valueOf(this.mEditNote.mDesktop));
-                    }
-                    cv.put(Notes.ENCRYPT, Integer.valueOf(this.mEditNote.mEncrypt ? REQUEST_CODE_EXPORT_TO_PIC : REQUEST_CODE_PICK));
-                    if (this.mEditNote.mEncrypt) {
-                        accountID = ((NoteApplication) getApplication()).getMeizuAccount();
-                        if (accountID > 0) {
-                            cv.put(Notes.ACCOUNT_ID, Long.valueOf(accountID));
-                        } else {
-                            Log.e(TAG, "Encrypt without flyme account login, this shouldn't happen!");
-                        }
-                    } else {
-                        cv.put(Notes.ACCOUNT_ID, Integer.valueOf(REQUEST_CODE_PICK));
+                        cv.put(Notes.TOP, this.mEditNote.mTopTime);
                     }
                     changedList = new ArrayList();
                     changedList.add(this.mPosition);
