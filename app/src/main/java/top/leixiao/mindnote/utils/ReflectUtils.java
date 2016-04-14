@@ -92,7 +92,7 @@ public class ReflectUtils {
 
     public static void setKeepSelection(TextView tv, boolean enabled) {
         try {
-            Method b = Class.forName("android.widget.TextView").getDeclaredMethod("setKeepSelection", new Class[]{Boolean.TYPE});
+            Method b = Class.forName("android.widget.TextView").getDeclaredMethod("setKeepSelection", Boolean.TYPE);
             if (!b.isAccessible()) {
                 b.setAccessible(true);
             }

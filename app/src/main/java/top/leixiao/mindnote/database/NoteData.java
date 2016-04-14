@@ -14,28 +14,23 @@ import top.leixiao.mindnote.database.NotePaper.Notes;
 import top.leixiao.mindnote.utils.NoteUtil;
 
 public class NoteData implements Serializable {
-    public static final String[] NOTES_PROJECTION = new String[]{"_id", NotePaper.Notes.TITLE, Notes.CREATE_TIME, Notes.MODIFIED_DATE, Notes.NOTE, Notes.PAPER, Notes.UUID, Notes.FONT_COLOR, Notes.FONT_SIZE, Notes.FIRST_IMAGE, Notes.FIRST_RECORD, Notes.CATEGORY, Notes.TOP,Notes.COLOR};
+    public static final String[] NOTES_PROJECTION = new String[]{"_id", NotePaper.Notes.TITLE, Notes.CREATE_TIME, Notes.MODIFIED_DATE, Notes.NOTE, Notes.PAPER, Notes.UUID, Notes.FONT_COLOR, Notes.FONT_SIZE, Notes.FIRST_IMAGE, Notes.FIRST_RECORD, Notes.CATEGORY, Notes.TOP,Notes.COLOR,Notes.LABELS};
     public static int DEFAULT_FONT_SIZE = 18;
     public long mId = -1;
-
     public String mUUId;
     public String mTitle;
     public String mNoteData;
     public String mFirstImg;
     public String mFirstRecord;
-
     public long mCategory;
     public long mCreateTime;
     public long mModifyTime;
-    public long mTopTime;
     public int mColor;
-
+    public long mTopTime;
     public int mPaper;
     public int mTextColor = 0xff000000;
     public int mTextSize = DEFAULT_FONT_SIZE;
-
-
-
+    public String mLabels;
 
     //从数据库Cursor创建NoteData对象，静态方法
     public static NoteData getItem(Cursor cursor) {
@@ -70,6 +65,8 @@ public class NoteData implements Serializable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        nd.mLabels=cursor.getString(cursor.getColumnIndex(Notes.LABELS));
+
         return nd;
     }
 

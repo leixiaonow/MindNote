@@ -96,6 +96,7 @@ public class NotePaperProvider extends ContentProvider {
         sNotesProjectionMap.put(Notes.PAPER, Notes.PAPER);
         sNotesProjectionMap.put(Notes.FONT_COLOR, Notes.FONT_COLOR);
         sNotesProjectionMap.put(Notes.FONT_SIZE, Notes.FONT_SIZE);
+        sNotesProjectionMap.put(Notes.LABELS,Notes.LABELS);
 
 
         sCategoryProjectionMap.put(NotePaper.ID, NotePaper.ID);
@@ -462,7 +463,7 @@ public class NotePaperProvider extends ContentProvider {
 
         public void onCreate(SQLiteDatabase db) {
             Log.d(NotePaperProvider.TAG, "onCreate:notes");
-            db.execSQL("CREATE TABLE notes (_id INTEGER PRIMARY KEY AUTOINCREMENT,uuid TEXT,note TEXT,create_time INTEGER,modified INTEGER,paper INTEGER,title TEXT," + Notes.FONT_COLOR + " INTEGER," + Notes.COLOR + " INTEGER," + Notes.FONT_SIZE + " INTEGER," + Notes.FIRST_IMAGE + " TEXT," + Notes.FIRST_RECORD + " TEXT," + Notes.TOP + " INTEGER DEFAULT 0," + Notes.CATEGORY + " INTEGER DEFAULT 0" + ")");
+            db.execSQL("CREATE TABLE notes (_id INTEGER PRIMARY KEY AUTOINCREMENT,uuid TEXT,note TEXT,create_time INTEGER,modified INTEGER,paper INTEGER,title TEXT," + Notes.FONT_COLOR + " INTEGER," + Notes.COLOR + " INTEGER," + Notes.FONT_SIZE + " INTEGER," + Notes.FIRST_IMAGE + " TEXT," + Notes.FIRST_RECORD + " TEXT," + Notes.TOP + " INTEGER DEFAULT 0," + Notes.LABELS + " TEXT,"+ Notes.CATEGORY + " INTEGER DEFAULT 0" + ")");
             createCategoryTable(db);
             createLabelTable(db);
             //插入内建的笔记，可以注释掉

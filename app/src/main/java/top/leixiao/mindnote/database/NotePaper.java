@@ -45,6 +45,9 @@ public final class NotePaper {
         public static final String PAPER = "paper";
         public static String FONT_COLOR = "font_color";
         public static String FONT_SIZE = "font_size";
+
+        public static String LABELS="labels";
+
         public static final String DEFAULT_SORT_ORDER = "top DESC,modified DESC";
 
         private Notes() {

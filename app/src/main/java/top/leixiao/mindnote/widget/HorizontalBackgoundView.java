@@ -25,7 +25,7 @@ public class HorizontalBackgoundView extends HorizontalScrollView {
                 HorizontalBackgoundView.this.mCurrentBackView = iv;
                 iv.setSelected(true);
                 if (v.getContext() instanceof NoteEditActivity) {
-                    ((NoteEditActivity) v.getContext()).onBackgroundChanged(((Integer) iv.getTag()).intValue());
+                    ((NoteEditActivity) v.getContext()).onBackgroundChanged((Integer) iv.getTag());
                 }
             }
         }
