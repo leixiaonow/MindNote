@@ -617,10 +617,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         Intent intent = getIntent();
         this.mPosition = intent.getIntExtra("pos", -1);//得到传入的位置
 //        long id = intent.getLongExtra("id", -1);//得到传入的id，笔记的id
-        long id = intent.getLongExtra("id", 5);//得到传入的id，笔记的id
+        long id = intent.getLongExtra("id", -1);//得到传入的id，笔记的id
         Uri noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, id);//得到笔记的唯一路径，ContentProvider需要
 //        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -1);//得到传入的mtype，默认新建笔记
-        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -5);//得到传入的mtype，更新新建笔记
+        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -1);//得到传入的mtype，更新新建笔记
         this.mFocusId = intent.getIntExtra("focus", -2);//得到传入的mFocusId，光标位置？？
         this.mSelectStart = intent.getIntExtra("select", -1);//得到传入的mSelectStart
         this.mNewFlag = intent.getBooleanExtra("creating", false);//得到传入的mNewFlag，新建笔记标签
@@ -1175,10 +1175,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             index += 1;
         }
         this.mEditParent.removeViewAt(index);
-
         setTextChanged();
-        deleteFileInDataBase(richView.getUUID(), richView.getFileName());
-
+//        deleteFileInDataBase(richView.getUUID(), richView.getFileName());
         scanNoteDir();
         if (index > 0) {
             newfocus = index - 1;
@@ -1414,6 +1412,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             this.mRecordingLayoutView.stopRecording(false);
             this.mRecordingLayoutView = null;
         }
+//        save();
+//        setResult(-1,null);
         super.onBackPressed();
     }
 
@@ -1719,7 +1719,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     @Override
     protected void onPause() {
         super.onPause();
-//        save();
+        save();
+        setResult(5,null);
 //        saveOnPageInfo();
     }
 
@@ -1729,6 +1730,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         long exitTime = System.currentTimeMillis();
         this.mLaunchTime = exitTime;
     }
+
 
     @Override
     protected void onResume() {
@@ -2299,27 +2301,17 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //实现删除动作的函数，当点击菜单中的删除时，在对话框中确认后执行
     //需要NoteApplication，这里先不关注这个，注释了
     void onDeleteAction() {
-/*        this.mPauseState = REQUEST_CODE_SHARING;
         if (this.mEditNote.mId != -1) {
-            NoteApplication app = (NoteApplication) getApplication();
-            if (this.mPosition != -1) {
-                ArrayList<Integer> changedList = new ArrayList();
-                changedList.add(Integer.valueOf(this.mPosition));
-                app.setChangedData(REQUEST_CODE_SHARING, changedList);
-            }
-            NotePaperActivity npa = app.getNotePaperActivity();
-            if (npa != null) {
-                npa.setDeleteItemId(this.mEditNote.mId);
-            }
             getContentResolver().delete(ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId), null, null);
+            setResult(-1,null);
+
         } else {
-            getContentResolver().delete(NoteFiles.CONTENT_URI, "note_uuid = \"" + this.mEditNote.mUUId + "\"", null);
             File file = new File(NoteUtil.FILES_DIR, this.mEditNote.mUUId);
             if (file.exists()) {
                 NoteUtil.deleteFile(file);
             }
         }
-        finish();*/
+        finish();
     }
 
     //判断是否为空，包括检查mTitleView和mEditParent
@@ -2837,7 +2829,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 //                onBackgroundMenuClick();
                 break;
             case R.id.menu_delete:
-//                onDeleteMenuClicked();
+                onDeleteMenuClicked();
                 break;
         }
         return super.onOptionsItemSelected(item);

@@ -1,8 +1,10 @@
 package top.leixiao.mindnote;
 
+import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -12,6 +14,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -56,12 +59,16 @@ public class MainActivity extends AppCompatActivity {
 
         emptyListTextView = (TextView) findViewById(android.R.id.empty);
         recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+//添加分割线
+//        recyclerView.addItemDecoration(new RecyclerView.ItemDecoration());
 
-        menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.multiple_actions);
-        actionButton_JiShi = (FloatingActionButton) findViewById(R.id.action_b);
-        actionButton_ZhaoPian = (FloatingActionButton) findViewById(R.id.action_a);
-        actionButton_ZhaoPian.setSize(FloatingActionButton.SIZE_MINI);
-        actionButton_JiShi.setSize(FloatingActionButton.SIZE_MINI);
+//        menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.multiple_actions);
+//        actionButton_JiShi = (FloatingActionButton) findViewById(R.id.action_b);
+//        actionButton_ZhaoPian = (FloatingActionButton) findViewById(R.id.action_a);
+//        actionButton_ZhaoPian.setSize(FloatingActionButton.SIZE_MINI);
+//        actionButton_JiShi.setSize(FloatingActionButton.SIZE_MINI);
+        actionButton_ZhaoPian = (FloatingActionButton) findViewById(R.id.multiple_actions);
 
 
 
@@ -72,8 +79,12 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setTitle("记事本");
         toolbar.setSubtitle("视图");
 
+        isGridView = false;
+        if (isGridView) {
             recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
-
+        } else {
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        }
 
 
         recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -89,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent=new Intent(MainActivity.this,NoteEditActivity.class);
                     intent.putExtra("id",notesData.get(position).mId);
                     intent.putExtra("type",-5);
-                    startActivityForResult(intent,100);
+                    startActivityForResult(intent,EDIT_NOTE_RESULT_CODE);
                 } else {
                     if (selectedPositions.contains(position)) {
                         notesData.get(position).isSelected=false;
@@ -126,13 +137,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        actionButton_JiShi.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                menuMultipleActions.collapse();
-//                startActivityForResult(EditNoteActivity.buildIntent(MainActivity.this), NEW_NOTE_RESULT_CODE);
-            }
-        });
+//        actionButton_JiShi.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                menuMultipleActions.collapse();
+////                startActivityForResult(EditNoteActivity.buildIntent(MainActivity.this), NEW_NOTE_RESULT_CODE);
+//            }
+//        });
 
         //切换Layout
         actionButton_ZhaoPian.setOnClickListener(new View.OnClickListener() {
@@ -143,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(Constants.JSON_KEY_TYPE, -1);
                 intent.putExtra("id", -1);
                 intent.putExtra("pos", -1);
-                startActivity(intent);
+                startActivityForResult(intent,NEW_NOTE_RESULT_CODE);
             }
         });
 
@@ -195,6 +206,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDestroyActionMode(ActionMode mode) {
                 //   setListOnItemClickListenersWhenNoActionMode();
+//                updataRecyclor();
+                isActionMode=false;
+                mAdapter.notifyDataSetChanged();
                 resetSelectedListItems();
             }
         };
@@ -209,6 +223,7 @@ public class MainActivity extends AppCompatActivity {
         if (mCursor == null) {
             return;
         }
+
         while (mCursor.moveToNext()) {
             notesData.add(NoteData.getItem(mCursor));
         }
@@ -225,16 +240,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void deleteNotes(ArrayList<Integer> selectedPositions) {
-//        ArrayList<Note> toRemoveList = new ArrayList<>(selectedPositions.size());
-//        for (int position : selectedPositions) {
-//            Note note = notesData.get(position);
-//            toRemoveList.add(note);
-//            noteDAO.delete(note);
-//        }
-//
-//        for (Note noteToRemove : toRemoveList) notesData.remove(noteToRemove);
-//        updateView();
-//        mAdapter.notifyDataSetChanged();
+        ArrayList<NoteData> toRemoveList = new ArrayList<>(selectedPositions.size());
+        for (int position : selectedPositions) {
+            NoteData note = notesData.get(position);
+            toRemoveList.add(note);
+            Uri noteUri = ContentUris.withAppendedId(NotePaper.Notes.CONTENT_URI, note.mId);//得到笔记的唯一路径，ContentProvider需要
+            getContentResolver().delete(noteUri,null,null);
+        }
+
+        for (NoteData noteToRemove : toRemoveList) notesData.remove(noteToRemove);
+        updateView();
+        updataRecyclor();
     }
 
 
@@ -291,13 +307,19 @@ public class MainActivity extends AppCompatActivity {
     //视图返回时调用
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == NEW_NOTE_RESULT_CODE) {
-            if (resultCode == RESULT_OK) addNote(data);
-        }
-        if (requestCode == EDIT_NOTE_RESULT_CODE) {
-            if (resultCode == RESULT_OK) updateNote(data);
-        }
+        Log.d("ok", "onActivityResult requestCode: "+requestCode);
+        Log.d("ok", "onActivityResult resultCode: "+resultCode);
+                Log.d("result_ok", "onActivityResult: "+NEW_NOTE_RESULT_CODE);
+        updataRecyclor();
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public void updataRecyclor(){
+        isActionMode=false;
+        initNoteData();
+        updateView();
+        mAdapter.notes=notesData;
+        mAdapter.notifyDataSetChanged();
     }
 
 
@@ -313,7 +335,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        menuMultipleActions.collapse();
     }
 
 }

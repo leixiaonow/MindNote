@@ -312,7 +312,7 @@ public class NotePaperProvider extends ContentProvider {
                 if (c != null) {
                     while (c.moveToNext()) {
                         uuid = c.getString(FILE_COLUMN_ID);
-                        db.delete(FILES_TABLE_NAME, "note_uuid=\"" + uuid + "\"", null);
+//                        db.delete(FILES_TABLE_NAME, "note_uuid=\"" + uuid + "\"", null);
                         deleteSdcardFiles(uuid);
                     }
                     c.close();
