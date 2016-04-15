@@ -48,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     private ActionMode actionMode;
     private MainRecyclerViewAdapter mAdapter;
     private Cursor mCursor;
+    private MenuItem mMenuView;
+    private MenuItem mMenuSet;
 
 
     @Override
@@ -76,8 +78,8 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationIcon(R.mipmap.ic_drawer_home);
         //    toolbar.setLogo(R.mipmap.ic_launcher);
-        toolbar.setTitle("记事本");
-        toolbar.setSubtitle("视图");
+        toolbar.setTitle(R.string.app_name);
+//        toolbar.setSubtitle("视图");
 
         isGridView = false;
         if (isGridView) {
@@ -282,7 +284,17 @@ public class MainActivity extends AppCompatActivity {
     //创建选项菜单 OptionsMenu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
+
         getMenuInflater().inflate(R.menu.main, menu);
+        this.mMenuView = menu.findItem(R.id.action_chang_view);
+        this.mMenuSet = menu.findItem(R.id.action_set);
+        Log.d("menu", "onCreateOptionsMenu: isgridView"+isGridView);
+        if(isGridView){
+            mMenuView.setTitle(R.string.main_list);
+        }else {
+            mMenuView.setTitle(R.string.main_grid);
+        }
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -293,9 +305,13 @@ public class MainActivity extends AppCompatActivity {
                 if (isGridView) {
                     isGridView = false;
                     recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+                    item.setTitle(R.string.main_grid);
+
                 } else {
                     isGridView = true;
                     recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+                    item.setTitle(R.string.main_list);
+
                 }
                 break;
             default:

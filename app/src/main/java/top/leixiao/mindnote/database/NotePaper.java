@@ -48,7 +48,7 @@ public final class NotePaper {
 
         public static String LABELS="labels";
 
-        public static final String DEFAULT_SORT_ORDER = "top DESC,modified DESC";
+        public static final String DEFAULT_SORT_ORDER = "top DESC,create_time DESC";
 
         private Notes() {
         }
@@ -69,36 +69,5 @@ public final class NotePaper {
         private NoteCategory() {
         }
     }
-
-    public static final class NoteFiles implements BaseColumns {
-        public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.notepaper.notefile";
-        public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.notepaper.notefile";
-        public static final Uri CONTENT_URI = Uri.parse("content://" + NotePaper.AUTHORITY + "/notefiles");
-
-        public static final String DEFAULT_SORT_ORDER = "_id";
-        public static final String FILE_MTIME = "mtime";
-        public static final String FILE_NAME = "name";
-        public static final String NOTE_UUID = "note_uuid";
-        public static final String TYPE = "type";
-        public static final int TYPE_AUDIO = 1;
-        public static final int TYPE_IMAGE = 0;
-        private NoteFiles() {
-        }
-    }
-
-        public static final class LabelContent implements BaseColumns {
-
-            public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.notepaper.label";
-            public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.notepaper.label";
-            public static final Uri CONTENT_URI = Uri.parse("content://" + NotePaper.AUTHORITY + "/labels");
-            public static final String CREATE_TABLE_SQL = "CREATE TABLE label_item (_id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT);";
-
-            public static final String DEFAULT_SORT_ORDER = "_id";
-
-            private LabelContent(){
-
-            }
-
-        }
 
 }

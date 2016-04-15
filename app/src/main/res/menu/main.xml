@@ -6,14 +6,10 @@
         android:id="@+id/action_chang_view"
         NotepadApp:showAsAction="always"
         android:title="@string/action_chang_view" />
+    <item
+        android:id="@+id/action_set"
+        NotepadApp:showAsAction="always"
+        android:title="@string/action_set" />
 
-    <item
-        android:id="@+id/action_about_info"
-        NotepadApp:showAsAction="never"
-        android:title="@string/action_about_notice" />
-    <item
-        android:id="@+id/action_licenses_info"
-        NotepadApp:showAsAction="never"
-        android:title="@string/action_licenses_notice" />
 
 </menu>

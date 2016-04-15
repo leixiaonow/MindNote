@@ -4,21 +4,29 @@
     <item
         android:id="@id/menu_top"
         android:checkable="true"
-        android:icon="@drawable/ic_top_small"
         android:title="@string/menu_top"
         app:showAsAction="always" />
     <item
         android:id="@id/menu_share"
         android:title="@string/menu_share"
-        android:icon="@drawable/share_mail"
-        app:showAsAction="always" />
+        app:showAsAction="always" >
+        <menu>
+            <item android:title="@string/share_pic"
+
+                />
+            <item android:title="@string/share_text"
+
+                />
+
+        </menu>
+
+        </item>
     <item
-        android:icon="@drawable/mz_btn_check_button_circle_off_normal"
         android:id="@id/menu_change_paper"
-        android:title="@string/menu_change_paper"
+        android:title="@string/menu_color"
         app:showAsAction="always" />
     <item
-        android:icon="@drawable/ic_delete"
+
         android:id="@id/menu_delete"
         android:title="@string/menu_delete"
         android:visible="true"

@@ -426,10 +426,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         setContentView(R.layout.activity_edit);//加载布局
         initData();
         initlView();
-        initListener();
         initEditLayout();//加载显示的笔记内容
         initTitle();
         showLabel();
+        initListener();
         this.telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
         this.telephonyManager.listen(this.phoneStateListener, 32);
         registerReceiver(this.mTimeChangedReceiver, new IntentFilter("android.intent.action.TIME_SET"));
@@ -951,6 +951,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
             addTextItem(nt2);
         }
+        setFirstHint();
     }
 
     public OnClickListener getCheckClickListener() {
@@ -1445,6 +1446,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
         //title改变，如果为空则删除笔记
         if ((this.mChanged & CHANGE_TITLE) == CHANGE_TITLE) {
+            Log.d(TAG, "saveImpl: titlechanged");
             Editable title = this.mTitleView.getText();
             if (title == null || title.length() <= 0) {
                 this.mEditNote.mTitle = null;
@@ -1461,6 +1463,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         ArrayList<String> fileList = new ArrayList<>();
         //改变内容
         if ((this.mChanged & CHANGE_CONTENT) == CHANGE_CONTENT) {
+            Log.d(TAG, "saveImpl: contentchanged");
             JSONObject jo;
             NoteItemImage nt3;
             this.mDataList.clear();
@@ -1603,9 +1606,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                         cv.put(Notes.LABELS,convertToStringLabel(((NoteAppImpl)getApplication()).mSelectLabelIds));
                     }
 
-                    if ((this.mChanged & CHANGE_TOP) != 0) {
-                        cv.put(Notes.TOP, this.mEditNote.mTopTime);
-                    }
+                    cv.put(Notes.TOP, this.mEditNote.mTopTime);
+
                     this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
                     this.mEditNote.mFirstImg = this.mFirstImg;
                     this.mEditNote.mFirstRecord = this.mFirstRecord;
@@ -2051,14 +2053,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 //        }).start();
     }
 
-    //从数据库中删除file
-    public void deleteFileInDataBase(final String uuid, final String name) {
-        new Thread(new Runnable() {
-            public void run() {
-                NoteEditActivity.this.getContentResolver().delete(NotePaper.NoteFiles.CONTENT_URI, "name = \"" + name + "\"" + " and " + NotePaper.NoteFiles.NOTE_UUID + " = \"" + uuid + "\"", null);
-            }
-        }).start();
-    }
 
     public void insertInRichItem(View view, CharSequence s) {
         boolean appendNew = true;
@@ -2443,7 +2437,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //点击分享时，根据type判断分享类型
     void onShareMenuAction(int type) {
         this.mShareIntent = new Intent();
-        this.mShareIntent.addFlags(524289);
+        this.mShareIntent.addFlags(0x80001);
         if (type == 0) {
             File parent = EnvironmentUtils.buildExternalStorageAppCacheDirs(Config.PACKAGE_NAME)[REQUEST_CODE_PICK];
             if (!(parent.exists() || parent.mkdirs())) {
@@ -2798,19 +2792,14 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_top:
-                save();
-                Log.d(TAG, "onOptionsItemSelected: savebottom");
-//                if (item.isChecked()) {
-//                    this.mEditNote.mTopTime = 0;
-//                    item.setChecked(false);
-//                    Toast.makeText(this, R.string.top_cancel, Toast.LENGTH_SHORT).show();
-//                } else {
-//                    this.mEditNote.mTopTime = System.currentTimeMillis();
-//                    item.setChecked(true);
-//                    Toast.makeText(this, R.string.top_success, Toast.LENGTH_SHORT).show();
-//                }
-//                this.mChanged |= REQUEST_CODE_EXPORT_TO_TEXT;
-//                break;
+                Log.d(TAG, "onOptionsItemSelected: menu_top");
+                if (this.mEditNote.mTopTime==0) {
+                    this.mEditNote.mTopTime = System.currentTimeMillis();
+                } else {
+                    this.mEditNote.mTopTime = 0;
+                }
+                this.mChanged |= CHANGE_TOP;
+                break;
             case R.id.menu_share:
 //                if (this.mShareIntent == null) {
 //                    if (checkSdcardOK()) {

@@ -25,8 +25,8 @@ public class NoteData implements Serializable {
     public long mCategory;
     public long mCreateTime;
     public long mModifyTime;
-    public int mColor;
     public long mTopTime;
+    public int mColor;
     public int mPaper;
     public int mTextColor = 0xff000000;
     public int mTextSize = DEFAULT_FONT_SIZE;

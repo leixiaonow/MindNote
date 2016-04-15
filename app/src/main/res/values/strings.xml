@@ -5,8 +5,9 @@
 
     <!-- MainActivity strings -->
     <string name="title_activity_notes_list">Notes</string>
-    <string name="no_notes">No notes yet</string>
-    <string name="action_delete">Delete</string>
+    <!--<string name="no_notes">No notes yet</string>-->
+    <string name="no_notes">还没有笔记哟！</string>
+    <string name="action_delete">删除</string>
     <string name="action_about_notice">About</string>
     <string name="action_licenses_notice">Open source licenses</string>
     <string name="delete_notes_alert">Delete %s note(s)?</string>
@@ -139,7 +140,7 @@
     <string name="media_duration_format_long">%1$02d:%3$02d:%5$02d</string>
     <string name="media_duration_format_short">%2$02d:%5$02d</string>
     <string name="menu_change_paper">Font And Paper color</string>
-    <string name="menu_delete">Delete</string>
+    <string name="menu_delete">删除</string>
     <string name="menu_done">Done</string>
     <string name="menu_encrypt">Encrypt</string>
     <string name="menu_export">Export</string>
@@ -147,13 +148,13 @@
     <string name="menu_export_text">Export as text</string>
     <string name="menu_float">Float mode</string>
     <string name="menu_full_screen">Full screen</string>
-    <string name="menu_share">Share</string>
+    <string name="menu_share">分享</string>
     <string name="menu_tip_edit">Edit</string>
     <string name="menu_tip_list">List</string>
     <string name="menu_tip_new">Create</string>
     <string name="menu_tip_pic">Picture</string>
     <string name="menu_tip_record">Record</string>
-    <string name="menu_top">Top</string>
+    <string name="menu_top">置顶</string>
     <string name="minute">min</string>
     <string name="more">…</string>
     <string name="more_item_label">More</string>
@@ -245,7 +246,7 @@
     <string name="set_network">Set</string>
     <string name="share">Share</string>
     <string name="share_original">Original Share</string>
-    <string name="share_pic">Picture Sharing</string>
+    <string name="share_pic">以图片分享</string>
     <string name="share_pic_tail1">From</string>
     <string name="share_pic_tail2">Notes</string>
     <string name="share_tail">From Meizu Flyme Note</string>
@@ -290,5 +291,10 @@
     <string name="import_backup_config_dialog_btn_choose">choose</string>
     <string name="button_delete">delete</string>
     <string name="button_sure">select</string>
+    <string name="action_set">设置</string>
+    <string name="menu_color">色彩</string>
+    <string name="share_text">以文字分享</string>
+    <string name="main_list">列表</string>
+    <string name="main_grid">网格</string>
 
 </resources>

@@ -4,9 +4,9 @@
     android:layout_height="54dp"
     android:background="#fff8f8f4"
     android:orientation="horizontal"
-    android:paddingLeft="12.0dip"
-    android:paddingRight="12.0dip"
-    android:weightSum="5.0">
+    android:paddingLeft="20.0dip"
+    android:paddingRight="20.0dip"
+    android:weightSum="4.0">
 
     <ImageView
         android:id="@+id/action_label"
@@ -34,6 +34,7 @@
         android:scaleType="center" />
 
     <ImageView
+        android:visibility="gone"
         android:id="@+id/action_recorde"
         style="@style/RippleEffect"
         android:layout_width="0.0dip"
