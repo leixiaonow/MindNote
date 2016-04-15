@@ -298,5 +298,8 @@
     <string name="main_grid">网格</string>
     <string name="notes">笔记</string>
     <string name="chakan">查看</string>
+    <string name="signature_hint">签名</string>
+    <string name="cancel_top">取消置顶</string>
+    <string name="top">置顶</string>
 
 </resources>

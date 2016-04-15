@@ -41,12 +41,4 @@
         android:textSize="@dimen/edit_text_font_size"
         android:visibility="visible" />
 
-    <top.leixiao.mindnote.widget.DeleteImageView
-        android:id="@id/delete"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_gravity="end"
-        android:scaleType="centerInside"
-        android:src="@drawable/mz_ic_delete"
-        android:visibility="gone" />
 </LinearLayout>

@@ -843,25 +843,20 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         edit.setTextSize((float) (this.mEditNote.mTextSize > 0 ? this.mEditNote.mTextSize : NoteData.DEFAULT_FONT_SIZE));
         //为edit设置文字改变监听
 
-        DeleteImageView deleteView = (DeleteImageView) item.findViewById(R.id.delete);
-
         switch (nt.mState) {
             case 0 /*0*/:
                 check.setImageType(nt.mState);
-                deleteView.setVisibility(View.GONE);
                 return;
             //导出为图片的情况
             case REQUEST_CODE_EXPORT_TO_PIC /*1*/:
                 check.setImageType(nt.mState);
                 //设置文字是否StrikeThrough
                 setEditStrikeThrough(edit, false);
-                deleteView.setVisibility(View.GONE);
                 return;
             //导出为文本的情况
             case REQUEST_CODE_EXPORT_TO_TEXT /*2*/:
                 check.setImageType(nt.mState);
                 setEditStrikeThrough(edit, true);
-                deleteView.setVisibility(View.GONE);
                 return;
             default:
                 return;
@@ -1031,12 +1026,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         NoteEditText neText = (NoteEditText) item.findViewById(R.id.text);
         neText.setText(cutText);
         neText.setTextSize((float) (this.mEditNote.mTextSize > 0 ? this.mEditNote.mTextSize : NoteData.DEFAULT_FONT_SIZE));
-        DeleteImageView deleteView = (DeleteImageView) item.findViewById(R.id.delete);
         switch (type) {
             case REQUEST_CODE_PICK /*0*/:
                 check.setImageType(type);
 //                deleteView.setVisibility(View.GONE);
-                deleteView.setVisibility(View.GONE);
                 setEditStrikeThrough(neText, false);
                 break;
             case REQUEST_CODE_EXPORT_TO_PIC /*1*/:
@@ -1044,7 +1037,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 check.setImageType(REQUEST_CODE_EXPORT_TO_PIC);
                 setEditStrikeThrough(neText, false);
 //                改动
-                deleteView.setVisibility(View.GONE);
                 break;
         }
         int count = this.mEditParent.getChildCount();
@@ -1305,7 +1297,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         View view = findFocusView();
         CheckImageView check;
         NoteEditText neText;
-        DeleteImageView newdeleteView;
         NoteEditText newText;
         if (this.mFocusNoteEditText == null) {
             int position = 0;
@@ -1315,9 +1306,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                     check = (CheckImageView) first.findViewById(R.id.check);
                     neText = (NoteEditText) first.findViewById(R.id.text);
                     if (check.getImageType() == 0 && neText.getText().length() == 0) {
-                        newdeleteView = (DeleteImageView) first.findViewById(R.id.delete);
                         check.setImageType(REQUEST_CODE_EXPORT_TO_PIC);
-                        newdeleteView.setVisibility(View.GONE);
                         neText.requestFocus();
                         Selection.setSelection(neText.getText(), REQUEST_CODE_PICK);
                         showSoftInput(neText);
@@ -1333,9 +1322,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 View item = getLayoutInflater().inflate(R.layout.edit_textlist_item, null);
                 CheckImageView newCheck = (CheckImageView) item.findViewById(R.id.check);
                 newText = (NoteEditText) item.findViewById(R.id.text);
-                newdeleteView = (DeleteImageView) item.findViewById(R.id.delete);
                 newCheck.setImageType(REQUEST_CODE_EXPORT_TO_PIC);
-                newdeleteView.setVisibility(View.GONE);
                 this.mEditParent.addView(item, position);
                 newText.requestFocus();
                 Selection.setSelection(newText.getText(), 0);
@@ -1350,7 +1337,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         int start = this.mFocusNoteEditText.getSelectionStart();
         View parent = (ViewGroup) this.mFocusNoteEditText.getParent();
         check = (CheckImageView) parent.findViewById(R.id.check);
-        DeleteImageView deleteView = (DeleteImageView) parent.findViewById(R.id.delete);
         neText = (NoteEditText) parent.findViewById(R.id.text);
         Editable edit = neText.getText();
         int type = check.getImageType();
@@ -1360,13 +1346,11 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 int oldState = check.getImageType();
                 check.setImageType(REQUEST_CODE_PICK);
 
-                deleteView.setVisibility(View.GONE);
                 setEditStrikeThrough(neText, false);
                 mergeCommonText(parent);
             } else if (listCountCheck()) {
                 check.setImageType(REQUEST_CODE_EXPORT_TO_PIC);
 
-                deleteView.setVisibility(REQUEST_CODE_PICK);
                 showSoftInput(neText);
             } else {
                 return;
@@ -1382,9 +1366,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             newText = (NoteEditText) item.findViewById(R.id.text);
             newText.setText(p1);
             newText.setTextSize((float) (this.mEditNote.mTextSize > 0 ? this.mEditNote.mTextSize : NoteData.DEFAULT_FONT_SIZE));
-            newdeleteView = (DeleteImageView) item.findViewById(R.id.delete);
             newCheck.setImageType(REQUEST_CODE_EXPORT_TO_PIC);
-            newdeleteView.setVisibility(View.GONE);
             int count = this.mEditParent.getChildCount();
             int index = REQUEST_CODE_PICK;
             while (index < count && this.mEditParent.getChildAt(index) != parent) {
@@ -1856,8 +1838,12 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         this.mMenuShare = menu.findItem(R.id.menu_share);//分享
         this.mMenuTop = menu.findItem(R.id.menu_top);//置顶
         if (!(this.mEditNote == null || this.mEditNote.mTopTime == 0)) {
-            this.mMenuTop.setChecked(true);
+            this.mMenuTop.setTitle(R.string.cancel_top);
         }
+        else {
+            this.mMenuTop.setTitle(R.string.top);
+        }
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -2803,8 +2789,11 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 Log.d(TAG, "onOptionsItemSelected: menu_top");
                 if (this.mEditNote.mTopTime==0) {
                     this.mEditNote.mTopTime = System.currentTimeMillis();
+                    item.setTitle(R.string.cancel_top);
+
                 } else {
                     this.mEditNote.mTopTime = 0;
+                    item.setTitle(R.string.top);
                 }
                 this.mChanged |= CHANGE_TOP;
                 break;
