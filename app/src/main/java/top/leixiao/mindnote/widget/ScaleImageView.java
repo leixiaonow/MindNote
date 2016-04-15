@@ -102,6 +102,7 @@ public class ScaleImageView extends ImageView {
         this.mUUID = uuid;
         this.mFileName = name;
         File file = NoteUtil.getFile(this.mUUID, this.mFileName);
+
         if (file.exists()) {
             setImageFile(NoteUtil.getFileName(uuid, name));
             this.mMTime = file.lastModified();

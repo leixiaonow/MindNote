@@ -620,7 +620,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         long id = intent.getLongExtra("id", 5);//得到传入的id，笔记的id
         Uri noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, id);//得到笔记的唯一路径，ContentProvider需要
 //        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -1);//得到传入的mtype，默认新建笔记
-        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -5);//得到传入的mtype，默认新建笔记
+        this.mType = intent.getIntExtra(Constants.JSON_KEY_TYPE, -5);//得到传入的mtype，更新新建笔记
         this.mFocusId = intent.getIntExtra("focus", -2);//得到传入的mFocusId，光标位置？？
         this.mSelectStart = intent.getIntExtra("select", -1);//得到传入的mSelectStart
         this.mNewFlag = intent.getBooleanExtra("creating", false);//得到传入的mNewFlag，新建笔记标签
@@ -1668,6 +1668,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         label.clear();
         if (labels != null) {
             for (String temp : labels.split(LABEL_SEPARATOR)) {
+                if (!temp.equals(""))
                 label.add(Integer.parseInt(temp));
             }
         }

@@ -32,6 +32,8 @@ public class NoteData implements Serializable {
     public int mTextSize = DEFAULT_FONT_SIZE;
     public String mLabels;
 
+    public boolean isSelected=false;
+
     //从数据库Cursor创建NoteData对象，静态方法
     public static NoteData getItem(Cursor cursor) {
         NoteData nd = new NoteData();

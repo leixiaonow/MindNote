@@ -572,6 +572,20 @@
     <dimen name="edit_note_label_item_text_horizon_padding">10dp</dimen>
     <dimen name="edit_note_label_item_text_size">12sp</dimen>
     <dimen name="edit_note_label_item_height">19dp</dimen>
-
+    <dimen name="home_note_item_gap">8dp</dimen>
+    <dimen name="home_note_item_image_height">113dp</dimen>
+    <dimen name="home_note_item_text_height">105dp</dimen>
+    <dimen name="home_note_item_text_padding_bottom">13dp</dimen>
+    <dimen name="home_note_item_text_padding_left">9dp</dimen>
+    <dimen name="home_note_item_text_padding_right">9dp</dimen>
+    <dimen name="home_note_item_text_padding_top">15dp</dimen>
+    <dimen name="home_note_item_reminder_margin_left">5dp</dimen>
+    <dimen name="home_note_item_title_size">16sp</dimen>
+    <dimen name="home_note_item_time_size">8sp</dimen>
+    <dimen name="home_note_item_content_margin_bottom">5dp</dimen>
+    <dimen name="home_note_item_content_margin_top">3dp</dimen>
+    <dimen name="home_note_item_content_size">12sp</dimen>
+    <dimen name="abstract_note_activity_footer_height">54dp</dimen>
+    <dimen name="abstract_note_activity_title_height">50dp</dimen>
 
 </resources>

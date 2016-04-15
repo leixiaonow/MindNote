@@ -27,15 +27,6 @@
             android:divider="#ffff0000"
             android:dividerHeight="10dp" />
 
-        <TextView
-            android:id="@id/android:empty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:gravity="center"
-            android:text="@string/no_notes"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
         <com.getbase.floatingactionbutton.FloatingActionsMenu
             android:id="@+id/multiple_actions"
             android:layout_width="wrap_content"
@@ -67,6 +58,16 @@
                 app:fab_title="记事" />
 
         </com.getbase.floatingactionbutton.FloatingActionsMenu>
+
+        <TextView
+            android:id="@id/android:empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:text="@string/no_notes"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:layout_gravity="center" />
 
     </FrameLayout>
 

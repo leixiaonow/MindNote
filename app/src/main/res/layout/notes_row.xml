@@ -8,52 +8,101 @@
         android:id="@+id/card_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        card_view:cardCornerRadius="4dp"
+        card_view:cardCornerRadius="0dp"
         card_view:cardElevation="4dp"
-        card_view:cardUseCompatPadding="true"
-        card_view:contentPadding="10dp">
+        android:layout_margin="0dp"
+        android:background="@color/abstract_note_activity_layout_head_default_bg"
+        android:padding="0dp">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
+        <FrameLayout
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content">
 
-            <TextView
-                android:id="@+id/note_id"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
+            <LinearLayout
+                android:id="@+id/note_item_container"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/note_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:layout_marginBottom="8dp"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="#ff000000"
-                android:textStyle="bold" />
+                <ImageView
+                    android:id="@+id/note_item_image"
+                    android:layout_width="fill_parent"
+                    android:layout_height="@dimen/home_note_item_image_height"
+                    android:scaleType="centerCrop"
+                    android:visibility="visible" />
 
-            <TextView
-                android:id="@+id/note_content"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/note_title"
-                android:layout_marginBottom="8dp"
-                android:textColor="#ff000000" />
+                <top.leixiao.mindnote.mainWidget.NoteCardBottomView
+                    android:id="@+id/note_item_card_bottom_view"
+                    android:layout_width="fill_parent"
+                    android:layout_height="@dimen/home_note_item_text_height"
+                    android:paddingBottom="@dimen/home_note_item_text_padding_bottom"
+                    android:paddingLeft="@dimen/home_note_item_text_padding_left"
+                    android:paddingRight="@dimen/home_note_item_text_padding_right"
+                    android:paddingTop="@dimen/home_note_item_text_padding_top">
 
-            <TextView
-                android:id="@+id/note_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
-                android:layout_below="@+id/note_content"
-                android:textColor="#ff000000"
-                android:textSize="12sp"
-                android:textStyle="italic" />
+                    <ImageView
+                        android:id="@+id/note_item_reminder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:layout_marginLeft="@dimen/home_note_item_reminder_margin_left"
+                        android:src="@drawable/note_item_reminder"
+                        android:visibility="invisible" />
 
-        </RelativeLayout>
+                    <TextView
+                        android:id="@+id/note_item_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:layout_toLeftOf="@id/note_item_reminder"
+                        android:singleLine="true"
+                        android:textColor="@color/home_note_item_title_color"
+                        android:textSize="@dimen/home_note_item_title_size" />
+
+                    <top.leixiao.mindnote.mainWidget.AmigoCheckBox
+                        android:id="@+id/note_item_checkbox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_alignParentRight="true"
+                        android:layout_marginBottom="-6.0dip"
+                        android:layout_marginLeft="@dimen/home_note_item_reminder_margin_left"
+                        android:layout_marginRight="-5.0dip"
+                        android:clickable="false"
+                        android:visibility="invisible" />
+
+                    <TextView
+                        android:id="@+id/note_item_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_alignParentLeft="true"
+                        android:layout_toLeftOf="@id/note_item_checkbox"
+                        android:textColor="@color/home_note_item_time_color"
+                        android:textSize="@dimen/home_note_item_time_size" />
+
+                    <top.leixiao.mindnote.mainWidget.MultiTextView
+                        android:id="@+id/note_item_content"
+                        android:layout_width="wrap_content"
+                        android:layout_height="fill_parent"
+                        android:layout_above="@id/note_item_time"
+                        android:layout_alignParentLeft="true"
+                        android:layout_below="@id/note_item_title"
+                        android:layout_marginBottom="@dimen/home_note_item_content_margin_bottom"
+                        android:layout_marginTop="@dimen/home_note_item_content_margin_top"
+                        android:layout_toLeftOf="@id/note_item_reminder"
+                        android:textColor="@color/home_note_item_content_color"
+                        android:textSize="@dimen/home_note_item_content_size"
+                        android:visibility="invisible" />
+                </top.leixiao.mindnote.mainWidget.NoteCardBottomView>
+            </LinearLayout>
+
+            <View
+                android:id="@+id/note_item_content_onclick_view"
+                style="@style/noteCardChickBgEffect"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent" />
+        </FrameLayout>
     </android.support.v7.widget.CardView>
 
 </RelativeLayout>

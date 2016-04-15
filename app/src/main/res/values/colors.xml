@@ -149,6 +149,11 @@
     <color name="dialog_background">#f8f8f4</color>
     <color name="label_selector_dialog_list_item_text_color_normal">#6b5b4e</color>
     <color name="edit_note_label_item_text_color">#ab9d98</color>
+    <color name="new_note_activity_normal_bg_color">#f1f0e8</color>
+    <color name="home_note_item_title_color">#705345</color>
+    <color name="home_note_item_time_color">#80000000</color>
+    <color name="home_note_item_content_color">#80000000</color>
+    <color name="abstract_note_activity_layout_head_default_bg">#af967b</color>
 
 
 </resources>
