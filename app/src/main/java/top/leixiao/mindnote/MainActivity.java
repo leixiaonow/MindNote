@@ -76,10 +76,9 @@ public class MainActivity extends AppCompatActivity {
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setNavigationIcon(R.mipmap.ic_drawer_home);
+//        toolbar.setNavigationIcon(R.mipmap.ic_drawer_home);
         //    toolbar.setLogo(R.mipmap.ic_launcher);
-        toolbar.setTitle(R.string.app_name);
-//        toolbar.setSubtitle("视图");
+        getSupportActionBar().setTitle(R.string.notes);
 
         isGridView = false;
         if (isGridView) {

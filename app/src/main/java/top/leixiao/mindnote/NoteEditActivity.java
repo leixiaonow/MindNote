@@ -14,7 +14,6 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Point;
@@ -215,6 +214,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 NoteEditText text = (NoteEditText) ((ViewGroup) v.getParent()).findViewById(R.id.text);
                 CheckImageView check = (CheckImageView) v;
                 switch (check.getImageType()) {
+
                     case NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC /*1*/:
                         check.setImageType(NoteEditActivity.REQUEST_CODE_EXPORT_TO_TEXT);
                         NoteEditActivity.this.setEditStrikeThrough(text, true);
@@ -461,6 +461,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         //toolbar
         edit_toolbar = (Toolbar) findViewById(R.id.edit_toolbar);//加载toolbar
         setSupportActionBar(edit_toolbar);
+        getSupportActionBar().setTitle(R.string.chakan);
         //滑动框中View
         this.mTitleView = (EditTextCloud) findViewById(R.id.title);
         this.mScrollView = (ScrollView) findViewById(R.id.scroll_view);//得到最外层mScrollView
@@ -516,6 +517,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
         this.mScrollView.findViewById(R.id.empty).setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
+                Log.d(TAG, "onClick: empty");
                 Point pt = new Point();
                 ReflectUtils.getLastTouchPoint(v, pt);
                 Rect r = new Rect();
@@ -527,6 +529,12 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         });
 
         mlastTimeView.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                NoteEditActivity.this.onFocusToEdit();
+            }
+        });
+
+        mScrollView.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 NoteEditActivity.this.onFocusToEdit();
             }
@@ -556,18 +564,18 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     }
 
-    void setTopBlurEffect() {
-        int color = Color.GREEN | (ViewCompat.MEASURED_SIZE_MASK & NoteUtil.getBackgroundColor(this.mEditNote != null ? this.mEditNote.mPaper : REQUEST_CODE_PICK));
-        BlurDrawable bd = new BlurDrawable();
-        bd.setColorFilter(color, BlurDrawable.DEFAULT_BLUR_COLOR_MODE);
-        ColorDrawable cd = new ColorDrawable(Color.GREEN);
-        Drawable[] drawableArr = new Drawable[REQUEST_CODE_EXPORT_TO_TEXT];
-        drawableArr[REQUEST_CODE_PICK] = bd;
-        drawableArr[REQUEST_CODE_EXPORT_TO_PIC] = cd;
-        LayerDrawable ld = new LayerDrawable(drawableArr);
-        ld.setLayerInset(REQUEST_CODE_EXPORT_TO_PIC, 52, getResources().getDimensionPixelSize(R.dimen.system_bar_top_height) - 3, 52, REQUEST_CODE_PICK);
-        edit_toolbar.setBackgroundDrawable(ld);
-    }
+//    void setTopBlurEffect() {
+//        int color = Color.GREEN | (ViewCompat.MEASURED_SIZE_MASK & NoteUtil.getBackgroundColor(this.mEditNote != null ? this.mEditNote.mPaper : REQUEST_CODE_PICK));
+//        BlurDrawable bd = new BlurDrawable();
+//        bd.setColorFilter(color, BlurDrawable.DEFAULT_BLUR_COLOR_MODE);
+//        ColorDrawable cd = new ColorDrawable(Color.GREEN);
+//        Drawable[] drawableArr = new Drawable[REQUEST_CODE_EXPORT_TO_TEXT];
+//        drawableArr[REQUEST_CODE_PICK] = bd;
+//        drawableArr[REQUEST_CODE_EXPORT_TO_PIC] = cd;
+//        LayerDrawable ld = new LayerDrawable(drawableArr);
+//        ld.setLayerInset(REQUEST_CODE_EXPORT_TO_PIC, 52, getResources().getDimensionPixelSize(R.dimen.system_bar_top_height) - 3, 52, REQUEST_CODE_PICK);
+//        edit_toolbar.setBackgroundDrawable(ld);
+//    }
 
     void setBottomBlurEffect(boolean useWhite) {
         ActionBar actionBar = getActionBar();
@@ -2253,7 +2261,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             View view = this.mScrollView.findViewById(R.id.frame_parent);
             getWindow().setBackgroundDrawable(new ColorDrawable(NoteUtil.getBackgroundColor(this.mEditNote.mPaper)));
             this.mChanged |= CHANGE_PAPER;
-            setTopBlurEffect();
+//            setTopBlurEffect();
         }
     }
 

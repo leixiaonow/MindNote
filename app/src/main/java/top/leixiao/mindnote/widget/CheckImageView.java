@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
+import top.leixiao.mindnote.NoteEditActivity;
 import top.leixiao.mindnote.R;
 
 /**
@@ -15,10 +16,13 @@ public class CheckImageView extends ImageView {
 
     public CheckImageView(Context context) {
         super(context);
+        init();
+
     }
 
     public CheckImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        init();
     }
 
     //设置图片显示的资源和是否隐藏根据type判断，浮动时
@@ -87,5 +91,14 @@ public class CheckImageView extends ImageView {
             default:
                 return;
         }
+    }
+
+    void init() {
+        OnClickListener listener = null;
+        //可以在使用的时候添加监听，从而不再依赖NoteEditActivity
+        if (getContext() instanceof NoteEditActivity) {
+            listener = ((NoteEditActivity) getContext()).getCheckClickListener();
+        }
+        setOnClickListener(listener);
     }
 }

@@ -11,7 +11,6 @@ import android.text.TextWatcher;
 import android.text.style.ClickableSpan;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.Toast;
 
@@ -61,26 +60,26 @@ public class NoteEditText extends EditTextCloud {
             setOnKeyListener(((NoteEditActivity) getContext()).getKeyPreListener());
 
         }
-        setOnFocusChangeListener(new OnFocusChangeListener() {
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (NoteEditText.this.getContext() instanceof NoteEditActivity) {
-                    NoteEditActivity na = (NoteEditActivity) NoteEditText.this.getContext();
-                    View parentView = (View) v.getParent();
-                    DeleteImageView deleteView = null;
-                    if (parentView != null) {
-                        deleteView = (DeleteImageView) parentView.findViewById(R.id.delete);
-                    }
-                    if (deleteView != null && ((CheckImageView) parentView.findViewById(R.id.check)).getImageType() != 0) {
-                        if (hasFocus) {
-                            deleteView.setVisibility(VISIBLE);
-//                            deleteView.setOnClickListener(na.getDeleteClickListener());
-                        } else {
-                            deleteView.setVisibility(INVISIBLE);
-                        }
-                    }
-                }
-            }
-        });
+//        setOnFocusChangeListener(new OnFocusChangeListener() {
+//            public void onFocusChange(View v, boolean hasFocus) {
+//                if (NoteEditText.this.getContext() instanceof NoteEditActivity) {
+//                    NoteEditActivity na = (NoteEditActivity) NoteEditText.this.getContext();
+//                    View parentView = (View) v.getParent();
+//                    DeleteImageView deleteView = null;
+//                    if (parentView != null) {
+//                        deleteView = (DeleteImageView) parentView.findViewById(R.id.delete);
+//                    }
+//                    if (deleteView != null && ((CheckImageView) parentView.findViewById(R.id.check)).getImageType() != 0) {
+//                        if (hasFocus) {
+//                            deleteView.setVisibility(VISIBLE);
+////                            deleteView.setOnClickListener(na.getDeleteClickListener());
+//                        } else {
+//                            deleteView.setVisibility(INVISIBLE);
+//                        }
+//                    }
+//                }
+//            }
+//        });
         addTextChangedListener(this.mTextWatch);
         setFilters(new InputFilter[]{new CustomFilter()});
         int touchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();

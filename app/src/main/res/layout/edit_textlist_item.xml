@@ -48,5 +48,5 @@
         android:layout_gravity="end"
         android:scaleType="centerInside"
         android:src="@drawable/mz_ic_delete"
-        android:visibility="visible" />
+        android:visibility="gone" />
 </LinearLayout>

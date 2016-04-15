@@ -296,5 +296,7 @@
     <string name="share_text">以文字分享</string>
     <string name="main_list">列表</string>
     <string name="main_grid">网格</string>
+    <string name="notes">笔记</string>
+    <string name="chakan">查看</string>
 
 </resources>
