@@ -65,7 +65,7 @@
     <dimen name="edit_recording_pause_right_margin">15.5dip</dimen>
     <dimen name="edit_recording_stop_right_margin">13.0dip</dimen>
     <dimen name="edit_text_bottom_margin">7.1999817dip</dimen>
-    <dimen name="edit_text_font_size">16.0sp</dimen>
+    <dimen name="edit_text_font_size">14.0sp</dimen>
     <dimen name="edit_text_left_margin">16.0dip</dimen>
     <dimen name="edit_text_line_space">6.399994dip</dimen>
     <dimen name="edit_text_margin">28.0dip</dimen>
