@@ -47,6 +47,7 @@
             android:authorities="top.leixiao.mindnote.TempFile"
             android:exported="true" />
     </application>
+
     <uses-permission android:name="top.leixiao.mindnote.ACCESS_NOTES"/>
 
 </manifest>

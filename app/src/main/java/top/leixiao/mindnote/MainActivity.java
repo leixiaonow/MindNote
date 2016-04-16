@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -50,12 +51,15 @@ public class MainActivity extends AppCompatActivity {
     private Cursor mCursor;
     private MenuItem mMenuView;
     private MenuItem mMenuSet;
+    ListView mDrawerMenuListView;
+    View drawerRootView;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_test);
         initNoteData();
         selectedPositions = new ArrayList<>();
 
@@ -138,13 +142,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        actionButton_JiShi.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                menuMultipleActions.collapse();
-////                startActivityForResult(EditNoteActivity.buildIntent(MainActivity.this), NEW_NOTE_RESULT_CODE);
-//            }
-//        });
 
         //切换Layout
         actionButton_ZhaoPian.setOnClickListener(new View.OnClickListener() {
@@ -213,6 +210,10 @@ public class MainActivity extends AppCompatActivity {
                 resetSelectedListItems();
             }
         };
+
+        mDrawerMenuListView=(ListView) findViewById(R.id.left_drawer_listview);
+        drawerRootView= findViewById(R.id.left_drawer);
+
     }
 
     private void initNoteData() {
