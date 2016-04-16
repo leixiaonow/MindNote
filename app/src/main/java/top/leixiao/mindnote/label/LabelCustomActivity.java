@@ -258,6 +258,7 @@ public class LabelCustomActivity extends AppCompatActivity implements OnClickLis
     }
 
     private void initView() {
+
         this.mNoteLabelAddView = (NoteLabelAddView) findViewById(R.id.note_label_add_view);
         this.mListView = (ListView) findViewById(R.id.label_custom_list);
         this.mListView.setAdapter(this.mAdapter);
@@ -265,7 +266,6 @@ public class LabelCustomActivity extends AppCompatActivity implements OnClickLis
         this.mselect=(TextView) findViewById(R.id.label_select_sure);
         mDelete.setOnClickListener(this);
         mselect.setOnClickListener(this);
-
         this.mNoteLabelAddView.setOnAddLabelListener(new MyOnAddLabelListener());
     }
 

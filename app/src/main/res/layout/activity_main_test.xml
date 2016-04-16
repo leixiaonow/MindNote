@@ -68,8 +68,9 @@
             android:layout_gravity="start"
             android:layout_width="wrap_content"
             android:layout_height="match_parent">
+
             <ListView android:id="@+id/left_drawer_listview"
-                android:layout_width="300dp"
+                android:layout_width="250dp"
                 android:layout_height="0dp"
                 android:layout_weight="1.0"
                 android:choiceMode="singleChoice"

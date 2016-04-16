@@ -58,13 +58,9 @@ public final class NotePaper {
     public static final class NoteCategory implements BaseColumns {
 
         public static final String CATEGORY_NAME = "name";
-        public static final String CATEGORY_ORDER = "sort";
-        public static final String CATEGORY_UUID = "uuid";
         public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.notepaper.category";
         public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.notepaper.category";
-        public static final Uri CONTENT_URI = Uri.parse("content://" + NotePaper.AUTHORITY + "/category");
-        public static final String DEFAULT_SORT_ORDER = "sort ASC,name ASC";
-        public static String DELETE = "deleted";
+        public static final Uri CONTENT_URI = Uri.parse("content://" + NotePaper.AUTHORITY + "/categorys");
 
         private NoteCategory() {
         }

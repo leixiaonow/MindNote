@@ -1,6 +1,7 @@
 package top.leixiao.mindnote;
 
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -15,9 +16,13 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -27,6 +32,7 @@ import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import java.util.ArrayList;
 
 import top.leixiao.mindnote.adapter.MainRecyclerViewAdapter;
+import top.leixiao.mindnote.catogery.CatogetyCustomActivity.CatogeryHolder;
 import top.leixiao.mindnote.database.NoteData;
 import top.leixiao.mindnote.database.NotePaper;
 import top.leixiao.mindnote.utils.Constants;
@@ -53,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem mMenuSet;
     ListView mDrawerMenuListView;
     View drawerRootView;
+    private String[] mProjection = new String[]{"_id", "name"};
+    String mOrderBy="_id";
+    ListAdapter mDrawerListAdapter;
+    int mCategory=-1;
 
 
 
@@ -61,27 +71,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_test);
         initNoteData();
+        initCatogeryData();
         selectedPositions = new ArrayList<>();
 
         emptyListTextView = (TextView) findViewById(android.R.id.empty);
         recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
-//添加分割线
-//        recyclerView.addItemDecoration(new RecyclerView.ItemDecoration());
-
-//        menuMultipleActions = (FloatingActionsMenu) findViewById(R.id.multiple_actions);
-//        actionButton_JiShi = (FloatingActionButton) findViewById(R.id.action_b);
-//        actionButton_ZhaoPian = (FloatingActionButton) findViewById(R.id.action_a);
-//        actionButton_ZhaoPian.setSize(FloatingActionButton.SIZE_MINI);
-//        actionButton_JiShi.setSize(FloatingActionButton.SIZE_MINI);
         actionButton_ZhaoPian = (FloatingActionButton) findViewById(R.id.multiple_actions);
-
-
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-//        toolbar.setNavigationIcon(R.mipmap.ic_drawer_home);
-        //    toolbar.setLogo(R.mipmap.ic_launcher);
         getSupportActionBar().setTitle(R.string.notes);
 
         isGridView = false;
@@ -152,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(Constants.JSON_KEY_TYPE, -1);
                 intent.putExtra("id", -1);
                 intent.putExtra("pos", -1);
+                intent.putExtra("category",mCategory);
                 startActivityForResult(intent,NEW_NOTE_RESULT_CODE);
             }
         });
@@ -214,22 +214,69 @@ public class MainActivity extends AppCompatActivity {
         mDrawerMenuListView=(ListView) findViewById(R.id.left_drawer_listview);
         drawerRootView= findViewById(R.id.left_drawer);
 
+        mDrawerListAdapter=new ListAdapter(this);
+        mDrawerMenuListView.setAdapter(mDrawerListAdapter);
+        mDrawerMenuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if (position==0){
+                    return;
+                }
+                if (position==1){
+                    mCategory=-1;
+                    initNoteData();
+                    mAdapter.notes=notesData;
+                    updateView();
+                    mAdapter.notifyDataSetChanged();
+                    return;
+                }
+                mCategory=((NoteAppImpl)getApplication()).mCatogetys.get(position).mId;
+                initNoteDataByCategory(mCategory);
+                mAdapter.notes=notesData;
+                updateView();
+                mAdapter.notifyDataSetChanged();
+            }
+        });
+        mDrawerMenuListView.setSelected(true);
+        mDrawerMenuListView.setSelection(1);
+    }
+    private void initNoteDataByCategory(int category){
+
+        this.mCursor = this.getContentResolver().query(NotePaper.Notes.CONTENT_URI, NoteData.NOTES_PROJECTION, "category="+category, null, NotePaper.Notes.DEFAULT_SORT_ORDER);
+        notesData = new ArrayList<>();
+        if (mCursor == null) {
+            return;
+        }
+        while (mCursor.moveToNext()) {
+            notesData.add(NoteData.getItem(mCursor));
+        }
+        mCursor.close();
     }
 
     private void initNoteData() {
-//        Uri noteUri = ContentUris.withAppendedId(NotePaper.Notes.CONTENT_URI, 5);
         this.mCursor = this.getContentResolver().query(NotePaper.Notes.CONTENT_URI, NoteData.NOTES_PROJECTION, null, null, NotePaper.Notes.DEFAULT_SORT_ORDER);
-//        this.mCursor = this.getContentResolver().query(noteUri, NoteData.NOTES_PROJECTION, null, null, NotePaper.Notes.DEFAULT_SORT_ORDER);
         notesData = new ArrayList<>();
 
         if (mCursor == null) {
             return;
         }
-
         while (mCursor.moveToNext()) {
             notesData.add(NoteData.getItem(mCursor));
         }
         mCursor.close();
+    }
+
+    void initCatogeryData(){
+        Cursor cursor = getContentResolver().query(NotePaper.NoteCategory.CONTENT_URI, this.mProjection, null, null, this.mOrderBy);
+        if (cursor == null) {
+            return;
+        }
+        ArrayList<CatogeryHolder> catogerys = new ArrayList<>();
+        while (cursor.moveToNext()) {
+            catogerys.add(new CatogeryHolder(cursor.getInt(0), cursor.getString(1)));
+        }
+        cursor.close();
+        ((NoteAppImpl)this.getApplication()).mCatogetys = new ArrayList<>(catogerys);
 
     }
 
@@ -332,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void updataRecyclor(){
         isActionMode=false;
-        initNoteData();
+        initNoteDataByCategory(mCategory);
         updateView();
         mAdapter.notes=notesData;
         mAdapter.notifyDataSetChanged();
@@ -351,6 +398,54 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+    }
+
+
+    private class ListAdapter extends BaseAdapter{
+
+
+        public Context mContext;
+        public LayoutInflater mInflater;
+
+        public ListAdapter(Context context){
+            super();
+            mContext=context;
+            mInflater = LayoutInflater.from(context);
+        }
+
+        @Override
+        public int getCount() {
+            return ((NoteAppImpl)getApplication()).mCatogetys.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return ((NoteAppImpl)getApplication()).mCatogetys.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            Holder holder;
+            if (convertView == null){
+                convertView = mInflater.inflate(R.layout.drawer_list_item_layout, null);
+                holder = new Holder();
+                holder.textView = (TextView)convertView.findViewById(R.id.textView);
+                convertView.setTag(holder);
+            }else{
+                holder = (Holder)convertView.getTag();
+            }
+            holder.textView.setText(((NoteAppImpl)getApplication()).mCatogetys.get(position).mName);
+            return convertView;
+        }
+    }
+
+    static class Holder {
+        TextView textView;
     }
 
 }

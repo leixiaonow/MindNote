@@ -602,7 +602,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         this.mFocusId = intent.getIntExtra("focus", -2);//得到传入的mFocusId，光标位置？？
         this.mSelectStart = intent.getIntExtra("select", -1);//得到传入的mSelectStart
         this.mNewFlag = intent.getBooleanExtra("creating", false);//得到传入的mNewFlag，新建笔记标签
-        long category = intent.getLongExtra("category", -1);//得到标识tag
+        long category = intent.getIntExtra("category", -1);//得到标识tag
         //如果传入的id<=-1，新建笔记
         if (id <= -1) {
             if (this.mEditNote == null) {

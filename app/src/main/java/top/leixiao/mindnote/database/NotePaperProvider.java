@@ -107,7 +107,6 @@ public class NotePaperProvider extends ContentProvider {
 
 
 
-
     }
 
     private DatabaseHelper mOpenHelper;
@@ -445,9 +444,11 @@ public class NotePaperProvider extends ContentProvider {
 
         private void createCategoryTable(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE categorys (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT )");
-            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.default_tag_work) + "'" + ")");
-            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.default_tag_life) + "'" + ")");
-            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.default_tag_temp) + "'" + ")");
+            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.add_category) + "'" + ")");
+            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.default_catogery) + "'" + ")");
+            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.default_catogery_travl) + "'" + ")");
+            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.default_catogery_life) + "'" + ")");
+            db.execSQL("insert into categorys (name) " + "values (" + "'"+ this.mContext.getResources().getString(R.string.default_catogery_work) + "'" + ")");
         }
 
         private void createLabelTable(SQLiteDatabase db) {

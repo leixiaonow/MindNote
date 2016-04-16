@@ -6,6 +6,7 @@ import android.os.Looper;
 
 import java.util.ArrayList;
 
+import top.leixiao.mindnote.catogery.CatogetyCustomActivity;
 import top.leixiao.mindnote.common.ThreadPool;
 import top.leixiao.mindnote.component.BaseApplication;
 import top.leixiao.mindnote.label.LabelCustomActivity;
@@ -20,6 +21,8 @@ public class NoteAppImpl extends BaseApplication {
 
     public ArrayList<LabelCustomActivity.LabelHolder> mlabels;
     public ArrayList<Integer> mSelectLabelIds = new ArrayList<>();
+
+    public ArrayList<CatogetyCustomActivity.CatogeryHolder> mCatogetys;
 
     public void onCreate() {
         super.onCreate();

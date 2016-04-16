@@ -306,5 +306,12 @@
     <string name="have_not_selected_labels">没有选中的标签</string>
     <string name="delete_note_alert">删除笔记？</string>
     <string name="delete_this_label">删除标签</string>
+    <string name="edit_catogery">编辑分类</string>
+    <string name="catogery">分类：</string>
+    <string name="default_catogery_work">工作</string>
+    <string name="default_catogery_life">生活</string>
+    <string name="default_catogery_travl">旅游</string>
+    <string name="add_category">添加分类</string>
+    <string name="default_catogery">所有笔记</string>
 
 </resources>
