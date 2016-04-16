@@ -10,7 +10,9 @@
     <string name="action_delete">删除</string>
     <string name="action_about_notice">About</string>
     <string name="action_licenses_notice">Open source licenses</string>
-    <string name="delete_notes_alert">Delete %s note(s)?</string>
+    <string name="delete_notes_alert">删除 %s 笔记?</string>
+    <string name="delete_labels_alert">删除 %s 标签?</string>
+
 
     <!-- Licenses dialog -->
     <string name="dialog_licenses_notice_title">Open source licenses</string>
@@ -289,8 +291,8 @@
     <string name="label_custom_exist">Label exists, input again</string>
     <string name="import_backup_config_dialog_btn_delete">delete</string>
     <string name="import_backup_config_dialog_btn_choose">choose</string>
-    <string name="button_delete">delete</string>
-    <string name="button_sure">select</string>
+    <string name="button_delete">删除</string>
+    <string name="button_sure">确定</string>
     <string name="action_set">设置</string>
     <string name="menu_color">色彩</string>
     <string name="share_text">以文字分享</string>
@@ -301,5 +303,8 @@
     <string name="signature_hint">签名</string>
     <string name="cancel_top">取消置顶</string>
     <string name="top">置顶</string>
+    <string name="have_not_selected_labels">没有选中的标签</string>
+    <string name="delete_note_alert">删除笔记？</string>
+    <string name="delete_this_label">删除标签</string>
 
 </resources>

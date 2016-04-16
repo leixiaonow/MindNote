@@ -321,12 +321,8 @@ public class NotePaperProvider extends ContentProvider {
                 }
                 count = FILE_COLUMN_ID;
                 break;
-            case FILES /*11*/:
-                count = db.delete(FILES_TABLE_NAME, where, whereArgs);
-                break;
-            case FILE_ID /*12*/:
-                count = db.delete(FILES_TABLE_NAME, "_id=" + ContentUris.parseId(uri) + (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : BuildConfig.VERSION_NAME), whereArgs);
-                break;
+            case LABEL_ID:
+                count = db.delete(LABEL_TABLE_NAME, "_id=" + ContentUris.parseId(uri), whereArgs);
             case CATEGORY /*13*/:
                 count = db.delete(CATEGORY_TABLE_NAME, where, whereArgs);
                 break;

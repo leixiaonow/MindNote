@@ -13,11 +13,12 @@ import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 
-
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class ImageUtil {
     public static final float MAX_IMAGE_SIZE = 1800.0f;
@@ -100,69 +101,29 @@ public class ImageUtil {
 
     //严重问题注释了
     public static boolean saveBitmap2file(Bitmap bmp, String filename) {
-/*        Exception e;
-        Throwable th;
         boolean z = false;
         if (filename != null) {
-            CompressFormat format = CompressFormat.JPEG;
+            Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
             if (filename.endsWith(".png")) {
-                format = CompressFormat.PNG;
+                format = Bitmap.CompressFormat.PNG;
             }
             OutputStream stream = null;
+
             try {
-                OutputStream stream2 = new FileOutputStream(filename);
-                try {
-                    z = bmp.compress(format, 100, stream2);
-                    if (stream2 != null) {
-                        try {
-                            stream2.close();
-                        } catch (IOException e2) {
-                            e2.printStackTrace();
-                        }
-                    }
-                } catch (Exception e3) {
-                    e = e3;
-                    stream = stream2;
-                    try {
-                        e.printStackTrace();
-                        if (stream != null) {
-                            try {
-                                stream.close();
-                            } catch (IOException e22) {
-                                e22.printStackTrace();
-                            }
-                        }
-                        return z;
-                    } catch (Throwable th2) {
-                        th = th2;
-                        if (stream != null) {
-                            try {
-                                stream.close();
-                            } catch (IOException e222) {
-                                e222.printStackTrace();
-                            }
-                        }
-                        throw th;
-                    }
-                } catch (Throwable th3) {
-                    th = th3;
-                    stream = stream2;
-                    if (stream != null) {
-                        stream.close();
-                    }
-                    throw th;
-                }
-            } catch (Exception e4) {
-                e = e4;
+                stream = new FileOutputStream(filename);
+            } catch (FileNotFoundException e) {
                 e.printStackTrace();
-                if (stream != null) {
-                    stream.close();
-                }
-                return z;
+            }
+
+            z = bmp.compress(format, 100, stream);
+
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        return z;*/
-        return false;
+        return z;
     }
 
     //始终返回true，空间始终够用

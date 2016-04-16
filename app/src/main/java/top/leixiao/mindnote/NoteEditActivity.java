@@ -1,7 +1,6 @@
 package top.leixiao.mindnote;
 
 import android.app.ActionBar;
-import android.app.AlertDialog.Builder;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -31,6 +30,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.accessibility.AccessibilityEventCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.appcompat.BuildConfig;
 import android.support.v7.widget.Toolbar;
 import android.telephony.PhoneStateListener;
@@ -107,9 +107,9 @@ import top.leixiao.mindnote.widget.ScaleImageView;
 
 
 public class NoteEditActivity extends RecordActivityBase implements OnClickListener {
-    private static final String TAG = "NoteEditActivity";
-
     public static final int MAX_WORDS = 20000;
+    public static final String LABEL_SEPARATOR = ",";
+    private static final String TAG = "NoteEditActivity";
     private static final int CHANGE_CONTENT = 0x10;
     private static final int CHANGE_FONT_COLOR = 0x1000;
     private static final int CHANGE_FONT_SIZE = 0x10000;
@@ -121,15 +121,11 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     private static final int REQUEST_CODE_EXPORT_TO_TEXT = 2;
     private static final int REQUEST_CODE_PICK = 0;
     private static final int REQUEST_CODE_PICK_CAPTURE = 6;
-
     private static final int REQUEST_CODE_SHARING = 3;
     private static final int IMAGE_WIDTH = 800;
     private static String sLastExportPicDirPath = null;
     private static String sLastExportTextDirPath = null;
     private static String sLastInsertDirPath = null;
-    private int mRequestCode = -1; //请求码
-
-
     //    flag
     public int mChanged = 0;//标识改变了那些
     public boolean mInitOK = false;//初始化是否完成
@@ -137,9 +133,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public boolean mIsSoftInuptShow = false;//软键盘是否打开
     public boolean mSoftInputShown = false;//如键盘是否显示的标识
     public int mType;//显示类型，导出图片或文字或编辑类型
-    private boolean mNewFlag = false;
-
-
     //    data
     public NoteData mEditNote;//正在编辑页面显示的笔记
     public String mFirstImg;//第一张图片的名称,是唯一的
@@ -147,40 +140,17 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public int mGreyColor;//灰色值
     public int mTextColor;//文本颜色
     public long mLaunchTime;//启动时间
-
     public int mPosition; //下一个插入元素的位置
     public int mRecordHorizontalMargin;//录音水平和竖直间隔
     public int mRecordVerticalMargin;
     public int mWidth;//宽度？？界面宽度的宽度？
     public int mCount = 0;
-    private int mFocusId = -2;//当前光标焦点
-    private int mSelectStart = -1;//选择开始处
-    public static final String LABEL_SEPARATOR = ",";
-
-
     public Intent mShareIntent; //分享时传递的Intent
-    private ArrayList<NoteItem> mDataList = new ArrayList<>();//存储NoteItem的列表，文字，图片，和声音
-    private HashSet<String> mDeleteFilesList;//删除文件列表
-    private Handler mHandler = new Handler();//多线程
-    private BroadcastReceiver mScreenOffAndHomeReceiver = null; //广播接收器
-    private ArrayList<Integer> mLabel = new ArrayList<>();
-    private TelephonyManager telephonyManager;//电话管理器
-
-    private Uri mLabelUri = Uri.parse("content://"+NotePaper.AUTHORITY+"/labels");
-    private String[] mProjection = new String[]{"_id", "content"};
-
-    //    View
-    private Toolbar edit_toolbar;
     public ScrollView mScrollView; //滚动器，最外层控件
     public LinearLayout mEditParent;//所有笔记元素的父容器
-    private ViewGroup mLabelContent;
-    private LinearLayout mLabelView;
     public EditTextCloud mTitleView;//标题栏
-    private LinearLayout mlastTimeView;
     public TextView mTailView; //尾巴textVeiw，用来显示时间
     public TextView mSignature; //尾巴签名，用来显示签名
-
-
     public TextView mFirstTextView; //第一个TextView
     public NoteEditText mFocusNoteEditText;//当前获得焦点的NoteEditText文字元素
     public RichFrameLayout mViewImageItem;//笔记的图片元素
@@ -188,25 +158,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public ListPopupWindow mPopup;
     public ProgressDialog mProgressDialog;  //进度窗口
     public RecordingLayout mRecordingLayoutView;//录音布局
-
-
-    private MenuItem mMenuDelete;//删除
-    private MenuItem mMenuDesktop;//显示到桌面
-    private MenuItem mMenuExport;//导出
-    private MenuItem mMenuExportPic;//导出为图片
-    private MenuItem mMenuPaper;//背景纸
-    private MenuItem mMenuShare;//分享
-    private MenuItem mMenuTop;//置顶
-
-
-    private View mSelectBill;
-    private View mSelectCamera;
-    private View mSelectGallery;
-    private View mSelectLabel;
-    private View mSelectRecord;
-    private View mSelectReminder;
-
-
     //CheckImageView 的监听事件
     public OnClickListener mCheckClickListener = new OnClickListener() {
         public void onClick(View v) {
@@ -229,9 +180,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-
-
-
     //删除 点击 的监听 deleteImageView调用？？？
     public OnClickListener mDeleteClickListener = new OnClickListener() {
         public void onClick(View v) {
@@ -310,7 +258,13 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             return false;
         }
     };
-
+    private int mRequestCode = -1; //请求码
+    private boolean mNewFlag = false;
+    private int mFocusId = -2;//当前光标焦点
+    private int mSelectStart = -1;//选择开始处
+    private ArrayList<NoteItem> mDataList = new ArrayList<>();//存储NoteItem的列表，文字，图片，和声音
+    private HashSet<String> mDeleteFilesList;//删除文件列表
+    private Handler mHandler = new Handler();//多线程
     //界面更新Handler
     public Handler mUiHandler = new Handler() {
         public void handleMessage(Message msg) {
@@ -353,9 +307,29 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-
-
-
+    private BroadcastReceiver mScreenOffAndHomeReceiver = null; //广播接收器
+    private ArrayList<Integer> mLabel = new ArrayList<>();
+    private TelephonyManager telephonyManager;//电话管理器
+    private Uri mLabelUri = Uri.parse("content://" + NotePaper.AUTHORITY + "/labels");
+    private String[] mProjection = new String[]{"_id", "content"};
+    //    View
+    private Toolbar edit_toolbar;
+    private ViewGroup mLabelContent;
+    private LinearLayout mLabelView;
+    private LinearLayout mlastTimeView;
+    private MenuItem mMenuDelete;//删除
+    private MenuItem mMenuDesktop;//显示到桌面
+    private MenuItem mMenuExport;//导出
+    private MenuItem mMenuExportPic;//导出为图片
+    private MenuItem mMenuPaper;//背景纸
+    private MenuItem mMenuShare;//分享
+    private MenuItem mMenuTop;//置顶
+    private View mSelectBill;
+    private View mSelectCamera;
+    private View mSelectGallery;
+    private View mSelectLabel;
+    private View mSelectRecord;
+    private View mSelectReminder;
     //什么监听？？根据实验，如果记事本既没有标题，又没有内容，或只有一个文字元素，且为空时
     //按返回键后，直接退出编辑界面，返回笔记列表界面，且不保存，或将已有笔记删除
     private EditTextCloud.OnKeyPreImeListener mOnKeyPreImeListener = new EditTextCloud.OnKeyPreImeListener() {
@@ -417,8 +391,32 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         }
     };
 
+    public static ArrayList<Integer> convertToArrayLabel(String labels) {
+        ArrayList<Integer> label = new ArrayList<>();
+        label.clear();
+        if (labels != null) {
+            for (String temp : labels.split(LABEL_SEPARATOR)) {
+                if (!temp.equals(""))
+                    label.add(Integer.parseInt(temp));
+            }
+        }
+        return label;
+    }
 
-
+    public static String convertToStringLabel(ArrayList<Integer> arrayLabel) {
+        StringBuilder updateBuilder = new StringBuilder();
+        int length = arrayLabel.size();
+        for (int i = 0; i < length; i += 1) {
+            updateBuilder.append(arrayLabel.get(i));
+            if (i != length - 1) {
+                updateBuilder.append(LABEL_SEPARATOR);
+            }
+        }
+        if (updateBuilder.length() == 0) {
+            return null;
+        }
+        return updateBuilder.toString();
+    }
 
     //入口
     protected void onCreate(Bundle savedInstanceState) {
@@ -439,6 +437,19 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 //        2、功能按钮
 
     }
+
+//    void setTopBlurEffect() {
+//        int color = Color.GREEN | (ViewCompat.MEASURED_SIZE_MASK & NoteUtil.getBackgroundColor(this.mEditNote != null ? this.mEditNote.mPaper : REQUEST_CODE_PICK));
+//        BlurDrawable bd = new BlurDrawable();
+//        bd.setColorFilter(color, BlurDrawable.DEFAULT_BLUR_COLOR_MODE);
+//        ColorDrawable cd = new ColorDrawable(Color.GREEN);
+//        Drawable[] drawableArr = new Drawable[REQUEST_CODE_EXPORT_TO_TEXT];
+//        drawableArr[REQUEST_CODE_PICK] = bd;
+//        drawableArr[REQUEST_CODE_EXPORT_TO_PIC] = cd;
+//        LayerDrawable ld = new LayerDrawable(drawableArr);
+//        ld.setLayerInset(REQUEST_CODE_EXPORT_TO_PIC, 52, getResources().getDimensionPixelSize(R.dimen.system_bar_top_height) - 3, 52, REQUEST_CODE_PICK);
+//        edit_toolbar.setBackgroundDrawable(ld);
+//    }
 
     private void initlView() {
 
@@ -564,19 +575,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     }
 
-//    void setTopBlurEffect() {
-//        int color = Color.GREEN | (ViewCompat.MEASURED_SIZE_MASK & NoteUtil.getBackgroundColor(this.mEditNote != null ? this.mEditNote.mPaper : REQUEST_CODE_PICK));
-//        BlurDrawable bd = new BlurDrawable();
-//        bd.setColorFilter(color, BlurDrawable.DEFAULT_BLUR_COLOR_MODE);
-//        ColorDrawable cd = new ColorDrawable(Color.GREEN);
-//        Drawable[] drawableArr = new Drawable[REQUEST_CODE_EXPORT_TO_TEXT];
-//        drawableArr[REQUEST_CODE_PICK] = bd;
-//        drawableArr[REQUEST_CODE_EXPORT_TO_PIC] = cd;
-//        LayerDrawable ld = new LayerDrawable(drawableArr);
-//        ld.setLayerInset(REQUEST_CODE_EXPORT_TO_PIC, 52, getResources().getDimensionPixelSize(R.dimen.system_bar_top_height) - 3, 52, REQUEST_CODE_PICK);
-//        edit_toolbar.setBackgroundDrawable(ld);
-//    }
-
     void setBottomBlurEffect(boolean useWhite) {
         ActionBar actionBar = getActionBar();
         if (useWhite || this.mEditNote == null || this.mEditNote.mPaper == 0) {
@@ -605,13 +603,11 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 //        actionBar.setSplitBackgroundDrawable(ld);
     }
 
-
-
     //检查sdcard空间，并创建文件夹
     boolean checkSdcardOK() {
         if (ImageUtil.checkSdcardAvailableSpace(0x200000)) {
             File pDataDir = new File(NoteUtil.FILES_ANDROID_DATA);
-            if ( pDataDir.exists()) {
+            if (pDataDir.exists()) {
                 return true;
             }
             Log.d(TAG, "Android data dir not exist.");
@@ -646,7 +642,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             this.mEditNote.mTopTime = 0; //设置置顶时间为0
             this.mEditNote.mCreateTime = System.currentTimeMillis();//设置创建时间
             this.mNewFlag = true;//新建笔记设为true
-            this.mEditNote.mLabels=null;
+            this.mEditNote.mLabels = null;
         } else {
             //不是新建笔记的情况
             //从数据库读出笔记
@@ -663,11 +659,11 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             cursor.moveToFirst();//cursor光标移到开头
             this.mEditNote = NoteData.getItem(cursor);//解析cursor内容
             cursor.close();
-            Log.d(TAG, "initData: uuid"+mEditNote.mUUId);
+            Log.d(TAG, "initData: uuid" + mEditNote.mUUId);
         }
 
-        ((NoteAppImpl)getApplication()).mSelectLabelIds=convertToArrayLabel(mEditNote.mLabels);
-        ((NoteAppImpl)getApplication()).mlabels=getAllLabels();
+        ((NoteAppImpl) getApplication()).mSelectLabelIds = convertToArrayLabel(mEditNote.mLabels);
+        ((NoteAppImpl) getApplication()).mlabels = getAllLabels();
         this.mFirstImg = this.mEditNote.mFirstImg;//设置mFirstImg
         this.mFirstRecord = this.mEditNote.mFirstRecord;//设置mFirstRecord
 
@@ -684,7 +680,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         this.mInitOK = true;
     }
 
-
     private ArrayList<LabelCustomActivity.LabelHolder> getAllLabels() {
 
         Cursor cursor = this.getContentResolver().query(this.mLabelUri, this.mProjection, null, null, "_id DESC");
@@ -699,6 +694,24 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         return labels;
     }
 
+    //查询taglist
+/*    void queryTagList() {
+        this.mTagList.clear();
+        this.mTagList.add(new TagInfo(-1, getString(R.string.all_tag)));
+        Cursor c = getContentResolver().query(NoteCategory.CONTENT_URI, TagData.TAGS_LIST, NoteCategory.DELETE + "<> 1", null, NoteCategory.DEFAULT_SORT_ORDER);
+        if (c != null) {
+            int cID = c.getColumnIndex(NoteFiles.DEFAULT_SORT_ORDER);
+            int cName = c.getColumnIndex(NoteUtil.JSON_FILE_NAME);
+            while (c.moveToNext()) {
+                this.mTagList.add(new TagInfo(c.getLong(cID), c.getString(cName)));
+            }
+            c.close();
+        }
+        if (TagData.FUN_ENCRYPT) {
+            this.mTagList.add(new TagInfo(-2, getString(R.string.group_encrypt)));
+        }
+        this.mTagList.add(new TagInfo(-3, getString(R.string.new_tag)));
+    }*/
 
     //不就是设置提示吧
     void setFirstHint() {
@@ -728,25 +741,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     @Override
     protected void onSaveInstanceState(Bundle outState) {
     }
-
-    //查询taglist
-/*    void queryTagList() {
-        this.mTagList.clear();
-        this.mTagList.add(new TagInfo(-1, getString(R.string.all_tag)));
-        Cursor c = getContentResolver().query(NoteCategory.CONTENT_URI, TagData.TAGS_LIST, NoteCategory.DELETE + "<> 1", null, NoteCategory.DEFAULT_SORT_ORDER);
-        if (c != null) {
-            int cID = c.getColumnIndex(NoteFiles.DEFAULT_SORT_ORDER);
-            int cName = c.getColumnIndex(NoteUtil.JSON_FILE_NAME);
-            while (c.moveToNext()) {
-                this.mTagList.add(new TagInfo(c.getLong(cID), c.getString(cName)));
-            }
-            c.close();
-        }
-        if (TagData.FUN_ENCRYPT) {
-            this.mTagList.add(new TagInfo(-2, getString(R.string.group_encrypt)));
-        }
-        this.mTagList.add(new TagInfo(-3, getString(R.string.new_tag)));
-    }*/
 
     @Override
     public void finish() {
@@ -825,7 +819,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         return this.mFocusNoteEditText;
     }
 
-
     //添加文本--重点分析
     void addTextItem(NoteItemText nt) {
         //为父布局mEditParent添加一个子布局
@@ -864,7 +857,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
     //在界面上加一个图片---重点分析
-     void addImageItem(NoteItemImage nt) {
+    void addImageItem(NoteItemImage nt) {
         //为父布局mEditParent添加一个子布局
         getLayoutInflater().inflate(R.layout.edit_image, this.mEditParent);
         //获得刚才添加的子布局
@@ -901,7 +894,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         //mNoteData是String类型，如果有数据就加到界面中
 //        mNoteData不为空则不是新建笔记
         if (this.mEditNote.mNoteData != null) {
-            Log.d(TAG, "initEditLayout: mNoteData"+mEditNote.mNoteData);
+            Log.d(TAG, "initEditLayout: mNoteData" + mEditNote.mNoteData);
             //从mNoteData回复出json数组
             try {
                 ja = new JSONArray(this.mEditNote.mNoteData);
@@ -911,7 +904,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             //设置size为数组的元素个数
             if (ja != null) {
                 size = ja.length();
-                Log.d(TAG, "initEditLayout: size:"+size);
+                Log.d(TAG, "initEditLayout: size:" + size);
             }
             addNew = true;
             //将所有从json数组中解析出来的对象，加到编辑界面中，重要
@@ -925,18 +918,18 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 addNew = false;
                 this.mDataList.add(nt); //加入数据列表
                 switch (nt.mState) {//根据mStata判断
-                    case NoteItem.STATE_COMMON :/*0*/
-                    case NoteItem.STATE_CHECK_OFF :/*1*/
-                    case NoteItem.STATE_CHECK_ON :/*2*/
-                        Log.d(TAG, "initEditLayout: mState:"+2);
+                    case NoteItem.STATE_COMMON:/*0*/
+                    case NoteItem.STATE_CHECK_OFF:/*1*/
+                    case NoteItem.STATE_CHECK_ON:/*2*/
+                        Log.d(TAG, "initEditLayout: mState:" + 2);
                         addTextItem((NoteItemText) nt);
                         break;
                     case NoteItem.STATE_IMAGE: /*3*/
-                        Log.d(TAG, "initEditLayout: mState:"+3);
+                        Log.d(TAG, "initEditLayout: mState:" + 3);
                         addImageItem((NoteItemImage) nt);
                         break;
                     case NoteItem.STATE_RECORD: /*4*/
-                        Log.d(TAG, "initEditLayout: mState:"+4);
+                        Log.d(TAG, "initEditLayout: mState:" + 4);
                         addRecordItem((NoteItemRecord) nt);
                         break;
                     default:
@@ -1002,7 +995,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         return this.mOnKeyPreImeListener;
     }
 
-
     //按键盘的回车键？？？
     boolean onKeyEnter() {
         if (findFocusEditView() == null) {
@@ -1056,7 +1048,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         this.mChanged |= CHANGE_CONTENT;
         return true;
     }
-
 
     //按键盘的删除按钮？？？
     boolean onKeyDel() {
@@ -1166,7 +1157,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         }
     }
 
-//    在RichFrameLayout中调用
+    //    在RichFrameLayout中调用
     public void removeFocusView(RichFrameLayout richView) {
         int newfocus;
         boolean next = false;
@@ -1391,7 +1382,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     void save() {
         new Thread(new Runnable() {
             public void run() {
-                    NoteEditActivity.this.saveImpl();
+                NoteEditActivity.this.saveImpl();
                 NoteEditActivity.this.mChanged = 0;
             }
         }).start();
@@ -1407,7 +1398,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 //        setResult(-1,null);
         super.onBackPressed();
     }
-
 
     void saveImpl() {
         int index;
@@ -1542,144 +1532,115 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
 
 
-
-                /////如果是删除当前笔记的话，再根据内容判断是否删除
-                if (delete) {
-                    size = this.mDataList.size();
-                    index = 0;
+            /////如果是删除当前笔记的话，再根据内容判断是否删除
+            if (delete) {
+                size = this.mDataList.size();
+                index = 0;
 //                        遍历mDataList笔记元素列表
-                    while (index < size) {
-                        ni = this.mDataList.get(index);
-                        if (ni.mState ==NoteItem.STATE_IMAGE||ni.mState==NoteItem.STATE_RECORD) {
+                while (index < size) {
+                    ni = this.mDataList.get(index);
+                    if (ni.mState == NoteItem.STATE_IMAGE || ni.mState == NoteItem.STATE_RECORD) {
+                        delete = false;
+                        break;
+                    } else {
+                        nt2 = (NoteItemText) ni;
+                        if (nt2.mText != null && !nt2.mText.equals("")) {
                             delete = false;
                             break;
-                        } else {
-                            nt2 = (NoteItemText) ni;
-                            if (nt2.mText != null&&!nt2.mText.equals("")) {
-                                delete = false;
-                                break;
-                            }
                         }
-                        index += 1;
                     }
+                    index += 1;
                 }
-                /////如果是删除
-                if (delete) {
-                    if (this.mEditNote.mId == -1) {/*新建笔记*/
-                        return;/*删除新建笔记什么都不做*/
-                    }
+            }
+            /////如果是删除
+            if (delete) {
+                if (this.mEditNote.mId == -1) {/*新建笔记*/
+                    return;/*删除新建笔记什么都不做*/
+                }
                     /*不是新建笔记，获得笔记的uri*/
-                    noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-                    getContentResolver().delete(noteUri, null, null);
-                    return;
-                }
-                /////是否时delete的相关的事情完成后，就开始保存笔记了\
+                noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
+                getContentResolver().delete(noteUri, null, null);
+                return;
+            }
+            /////是否时delete的相关的事情完成后，就开始保存笔记了\
 //
-                cv = new ContentValues();
+            cv = new ContentValues();
 //                如果是新建笔记
-                if (this.mEditNote.mId == -1) {//设置ContentValues
-                    cv.put(Notes.TITLE, this.mEditNote.mTitle);
-                    cv.put(Notes.NOTE, convert2JsonNoteText());
-                    now = System.currentTimeMillis();
-                    cv.put(Notes.CREATE_TIME, this.mEditNote.mCreateTime);
-                    cv.put(Notes.MODIFIED_DATE, now);
-                    cv.put(Notes.PAPER, this.mEditNote.mPaper);
-                    cv.put(Notes.FONT_SIZE, this.mEditNote.mTextSize);
-                    cv.put(Notes.UUID, this.mEditNote.mUUId);
-                    cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-                    cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
+            if (this.mEditNote.mId == -1) {//设置ContentValues
+                cv.put(Notes.TITLE, this.mEditNote.mTitle);
+                cv.put(Notes.NOTE, convert2JsonNoteText());
+                now = System.currentTimeMillis();
+                cv.put(Notes.CREATE_TIME, this.mEditNote.mCreateTime);
+                cv.put(Notes.MODIFIED_DATE, now);
+                cv.put(Notes.PAPER, this.mEditNote.mPaper);
+                cv.put(Notes.FONT_SIZE, this.mEditNote.mTextSize);
+                cv.put(Notes.UUID, this.mEditNote.mUUId);
+                cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
+                cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
 //                    cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-                    cv.put(Notes.CATEGORY, this.mEditNote.mCategory);
-                    if (((NoteAppImpl)getApplication()).mSelectLabelIds.size()==0){
-                        cv.put(Notes.LABELS,"");
-                    }else {
-                        cv.put(Notes.LABELS,convertToStringLabel(((NoteAppImpl)getApplication()).mSelectLabelIds));
-                    }
-
-                    cv.put(Notes.TOP, this.mEditNote.mTopTime);
-
-                    this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
-                    this.mEditNote.mFirstImg = this.mFirstImg;
-                    this.mEditNote.mFirstRecord = this.mFirstRecord;
-
-                    return;
+                cv.put(Notes.CATEGORY, this.mEditNote.mCategory);
+                if (((NoteAppImpl) getApplication()).mSelectLabelIds.size() == 0) {
+                    cv.put(Notes.LABELS, "");
+                } else {
+                    cv.put(Notes.LABELS, convertToStringLabel(((NoteAppImpl) getApplication()).mSelectLabelIds));
                 }
-                /////不是新建笔记，并且有改动，只更新改动的部分
-                if (this.mChanged != 0) {
-                    noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
-                    if ((this.mChanged & REQUEST_CODE_EXPORT_TO_PIC) != 0) {
-                        cv.put(Notes.TITLE, this.mEditNote.mTitle);
+
+                cv.put(Notes.TOP, this.mEditNote.mTopTime);
+
+                this.mEditNote.mId = ContentUris.parseId(getContentResolver().insert(Notes.CONTENT_URI, cv));
+                this.mEditNote.mFirstImg = this.mFirstImg;
+                this.mEditNote.mFirstRecord = this.mFirstRecord;
+
+                return;
+            }
+            /////不是新建笔记，并且有改动，只更新改动的部分
+            if (this.mChanged != 0) {
+                noteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId);
+                if ((this.mChanged & REQUEST_CODE_EXPORT_TO_PIC) != 0) {
+                    cv.put(Notes.TITLE, this.mEditNote.mTitle);
+                }
+                if ((this.mChanged & CHANGE_CONTENT) != 0) {
+                    cv.put(Notes.NOTE, convert2JsonNoteText());
+                    if (this.mEditNote.mFirstImg == null) {
                     }
-                    if ((this.mChanged & CHANGE_CONTENT) != 0) {
-                        cv.put(Notes.NOTE, convert2JsonNoteText());
-                        if (this.mEditNote.mFirstImg == null) {
-                        }
-                        cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
-                        if (this.mEditNote.mFirstRecord == null) {
-                        }
-                        cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
+                    cv.put(Notes.FIRST_IMAGE, this.mFirstImg);
+                    if (this.mEditNote.mFirstRecord == null) {
+                    }
+                    cv.put(Notes.FIRST_RECORD, this.mFirstRecord);
 //                        cv.put(Notes.FILE_LIST, NoteUtil.getFileListString(fileList));
-                    }
-                    now = System.currentTimeMillis();
-                    if ((this.mChanged & 0xffeffff1) != 0) {
-                        cv.put(Notes.MODIFIED_DATE, now);
-                    }
-                    if ((this.mChanged & CHANGE_PAPER) != 0) {
-                        cv.put(Notes.PAPER, this.mEditNote.mPaper);
-                    }
-                    if ((this.mChanged & CHANGE_FONT_COLOR) != 0) {
-                    }
-                    if ((this.mChanged & CHANGE_FONT_SIZE) != 0) {
-                        cv.put(Notes.FONT_SIZE, this.mEditNote.mTextSize);
-                    }
-                    if ((this.mChanged & CHANGE_TAG) != 0) {
-                        cv.put(Notes.CATEGORY, this.mEditNote.mCategory);
-                    }
-                    if ((this.mChanged & CHANGE_TOP) != 0) {
-                        cv.put(Notes.TOP, this.mEditNote.mTopTime);
-                    }
-
-                    if (((NoteAppImpl)getApplication()).mSelectLabelIds.size()==0){
-                        cv.put(Notes.LABELS,"");
-                    }else {
-                        cv.put(Notes.LABELS,convertToStringLabel(((NoteAppImpl)getApplication()).mSelectLabelIds));
-                    }
-                    changedList = new ArrayList<>();
-                    changedList.add(this.mPosition);
-                    getContentResolver().update(noteUri, cv, null, null);
-                    this.mEditNote.mFirstImg = this.mFirstImg;
-                    this.mEditNote.mFirstRecord = this.mFirstRecord;
                 }
+                now = System.currentTimeMillis();
+                if ((this.mChanged & 0xffeffff1) != 0) {
+                    cv.put(Notes.MODIFIED_DATE, now);
+                }
+                if ((this.mChanged & CHANGE_PAPER) != 0) {
+                    cv.put(Notes.PAPER, this.mEditNote.mPaper);
+                }
+                if ((this.mChanged & CHANGE_FONT_COLOR) != 0) {
+                }
+                if ((this.mChanged & CHANGE_FONT_SIZE) != 0) {
+                    cv.put(Notes.FONT_SIZE, this.mEditNote.mTextSize);
+                }
+                if ((this.mChanged & CHANGE_TAG) != 0) {
+                    cv.put(Notes.CATEGORY, this.mEditNote.mCategory);
+                }
+                if ((this.mChanged & CHANGE_TOP) != 0) {
+                    cv.put(Notes.TOP, this.mEditNote.mTopTime);
+                }
+
+                if (((NoteAppImpl) getApplication()).mSelectLabelIds.size() == 0) {
+                    cv.put(Notes.LABELS, "");
+                } else {
+                    cv.put(Notes.LABELS, convertToStringLabel(((NoteAppImpl) getApplication()).mSelectLabelIds));
+                }
+                changedList = new ArrayList<>();
+                changedList.add(this.mPosition);
+                getContentResolver().update(noteUri, cv, null, null);
+                this.mEditNote.mFirstImg = this.mFirstImg;
+                this.mEditNote.mFirstRecord = this.mFirstRecord;
+            }
         }
         Log.d(TAG, "saveImpl: done");
-    }
-
-
-    public static ArrayList<Integer> convertToArrayLabel(String labels) {
-        ArrayList<Integer> label = new ArrayList<>();
-        label.clear();
-        if (labels != null) {
-            for (String temp : labels.split(LABEL_SEPARATOR)) {
-                if (!temp.equals(""))
-                label.add(Integer.parseInt(temp));
-            }
-        }
-        return label;
-    }
-
-    public static String convertToStringLabel(ArrayList<Integer> arrayLabel) {
-        StringBuilder updateBuilder = new StringBuilder();
-        int length = arrayLabel.size();
-        for (int i = 0; i < length; i += 1) {
-            updateBuilder.append(arrayLabel.get(i));
-            if (i != length -1) {
-                updateBuilder.append(LABEL_SEPARATOR);
-            }
-        }
-        if (updateBuilder.length() == 0) {
-            return null;
-        }
-        return updateBuilder.toString();
     }
 
     protected void onDestroy() {
@@ -1712,7 +1673,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     protected void onPause() {
         super.onPause();
         save();
-        setResult(5,null);
+        setResult(5, null);
 //        saveOnPageInfo();
     }
 
@@ -1756,8 +1717,8 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 JSONObject jo = new JSONObject();
                 switch (ni.mState) {
                     case NoteItem.STATE_COMMON: /*0*///通常的文本
-                    case NoteItem.STATE_CHECK_OFF :/*1*///check 未点击
-                    case NoteItem.STATE_CHECK_ON :/*2*///text
+                    case NoteItem.STATE_CHECK_OFF:/*1*///check 未点击
+                    case NoteItem.STATE_CHECK_ON:/*2*///text
                         NoteItemText nt = (NoteItemText) ni;
                         jo.put(NoteUtil.JSON_STATE, nt.mState);
                         jo.put(NoteUtil.JSON_TEXT, nt.mText);
@@ -1839,8 +1800,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         this.mMenuTop = menu.findItem(R.id.menu_top);//置顶
         if (!(this.mEditNote == null || this.mEditNote.mTopTime == 0)) {
             this.mMenuTop.setTitle(R.string.cancel_top);
-        }
-        else {
+        } else {
             this.mMenuTop.setTitle(R.string.top);
         }
 
@@ -1858,7 +1818,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //根据result显示错误信息
 
     //把图片保存到文件夹中
-     String addImage(Context context, Uri uri, String uuid) {
+    String addImage(Context context, Uri uri, String uuid) {
         //调用ImageUtil.getImageFile
         File file = ImageUtil.getImageFile(context, uri, uuid);
         if (file == null && !checkSdcardOK()) {
@@ -1898,7 +1858,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 view = this.mTitleView;
             }
             if (view != null) {
-                if ((getWindow().getAttributes().softInputMode ) == 0) {
+                if ((getWindow().getAttributes().softInputMode) == 0) {
                     getWindow().setSoftInputMode(20);
                 }
                 view.requestFocus();
@@ -1984,11 +1944,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
 
-
-//    根据共享的mLabels 获得当前actvity的mLabel，再刷新界面显示的Labels
+    //    根据共享的mLabels 获得当前actvity的mLabel，再刷新界面显示的Labels
     private void showLabel() {
         if (((NoteAppImpl) getApplication()).mSelectLabelIds.size() == 0) {
-            this.mLabelContent.setVisibility(View.INVISIBLE);
+            this.mLabelContent.setVisibility(View.GONE);
             return;
         }
 
@@ -2291,7 +2250,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     void onDeleteAction() {
         if (this.mEditNote.mId != -1) {
             getContentResolver().delete(ContentUris.withAppendedId(Notes.CONTENT_URI, this.mEditNote.mId), null, null);
-            setResult(-1,null);
+            setResult(-1, null);
 
         } else {
             File file = new File(NoteUtil.FILES_DIR, this.mEditNote.mUUId);
@@ -2331,24 +2290,40 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             onDeleteAction();
             return;
         }
-        DialogInterface.OnClickListener confirmDeleteListener = new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                //调用删除函数
-                NoteEditActivity.this.onDeleteAction();
-            }
-        };
-        DialogInterface.OnClickListener cancleDeleteListener = new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        };
-        Builder dlg = new Builder(this);
-        dlg.setIcon(R.drawable.mz_ic_popup_delete);
-        dlg.setTitle(getString(R.string.delete_one_tip));
-        dlg.setPositiveButton(getString(R.string.ok), confirmDeleteListener);
-        dlg.setNegativeButton(getString(R.string.cancel), null);
-        dlg.show().setCanceledOnTouchOutside(true);
+//        DialogInterface.OnClickListener confirmDeleteListener = new DialogInterface.OnClickListener() {
+//            public void onClick(DialogInterface dialog, int which) {
+//                dialog.dismiss();
+//                //调用删除函数
+//                NoteEditActivity.this.onDeleteAction();
+//            }
+//        };
+//        DialogInterface.OnClickListener cancleDeleteListener = new DialogInterface.OnClickListener() {
+//            public void onClick(DialogInterface dialog, int which) {
+//                dialog.dismiss();
+//            }
+//        };
+//        Builder dlg = new Builder(this);
+//        dlg.setIcon(R.drawable.mz_ic_popup_delete);
+//        dlg.setTitle(getString(R.string.delete_one_tip));
+//        dlg.setPositiveButton(getString(R.string.ok), confirmDeleteListener);
+//        dlg.setNegativeButton(getString(R.string.cancel), null);
+//        dlg.show().setCanceledOnTouchOutside(true);
+
+
+        new AlertDialog.Builder(NoteEditActivity.this)
+                .setMessage(R.string.delete_note_alert)
+                .setNegativeButton(android.R.string.no, null)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        //调用删除函数
+                        NoteEditActivity.this.onDeleteAction();
+                    }
+                })
+                .show();
+
     }
 
     //
@@ -2449,10 +2424,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         }
         int index;
         this.mShareIntent.putExtra("format_txt", true);
-        ArrayList<String> picList = new ArrayList();
-        ArrayList<String> recordList = new ArrayList();
+        ArrayList<String> picList = new ArrayList<>();
+        ArrayList<String> recordList = new ArrayList<>();
         int childCount = this.mEditParent.getChildCount();
-        for (index = REQUEST_CODE_PICK; index < childCount; index += REQUEST_CODE_EXPORT_TO_PIC) {
+        for (index = 0; index < childCount; index += 1) {
             NoteItem nt = new NoteItem();
             View view = this.mEditParent.getChildAt(index);
             String tag = (String) view.getTag();
@@ -2469,10 +2444,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         if (txt != null && txt.length() > 0) {
             this.mShareIntent.putExtra("android.intent.extra.TEXT", txt);
         }
-        if (size == REQUEST_CODE_EXPORT_TO_PIC) {
+        if (size == 1) {
             Uri uri;
             this.mShareIntent.setAction("android.intent.action.SEND");
-            if (picSize == REQUEST_CODE_EXPORT_TO_PIC) {
+            if (picSize == 1) {
                 this.mShareIntent.setType("image/*");
                 uri = Uri.fromFile(NoteUtil.getFile(this.mEditNote.mUUId, (String) picList.get(REQUEST_CODE_PICK)));
             } else {
@@ -2480,7 +2455,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 uri = Uri.fromFile(NoteUtil.getFile(this.mEditNote.mUUId, (String) recordList.get(REQUEST_CODE_PICK)));
             }
             this.mShareIntent.putExtra("android.intent.extra.STREAM", uri);
-        } else if (size > REQUEST_CODE_EXPORT_TO_PIC) {
+        } else if (size > 1) {
             this.mShareIntent.setAction("android.intent.action.SEND_MULTIPLE");
             if (picSize == 0) {
                 this.mShareIntent.setType("audio/*");
@@ -2548,7 +2523,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
             int editHeight = this.mEditParent.getHeight();
             View lastView = this.mEditParent.getChildAt(this.mEditParent.getChildCount() - 1);
-            if (NoteUtil.JSON_TEXT.equals((String) lastView.getTag())) {
+            if (NoteUtil.JSON_TEXT.equals(lastView.getTag())) {
                 NoteEditText edit = (NoteEditText) lastView.findViewById(R.id.text);
                 int type = ((CheckImageView) lastView.findViewById(R.id.check)).getImageType();
                 if (edit.getText().length() == 0 && type == 0) {
@@ -2563,15 +2538,15 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
             float scale = scaled == 0 ? 1.0F : 0.5f;
             Bitmap src = Bitmap.createBitmap((int) (((float) width) * scale), (int) (((float) height) * scale), Bitmap.Config.ARGB_8888);
-            src.eraseColor(NoteUtil.getBackgroundColor(this.mEditNote.mPaper));
+//            src.eraseColor(NoteUtil.getBackgroundColor(this.mEditNote.mPaper));
             Canvas canvas = new Canvas(src);
-            canvas.setDrawFilter(new PaintFlagsDrawFilter(REQUEST_CODE_PICK, REQUEST_CODE_SHARING));
+            canvas.setDrawFilter(new PaintFlagsDrawFilter(0, 3));
             if (scale != 1.0F) {
                 canvas.scale(scale, scale);
             }
             if (attachMZFlag) {
                 canvas.save();
-                canvas.clipRect(new Rect(REQUEST_CODE_PICK, REQUEST_CODE_PICK, width, height - attachHeight));
+                canvas.clipRect(new Rect(0, 0, width, height - attachHeight));
             }
             this.mIsCapture = true;
             view.draw(canvas);
@@ -2631,7 +2606,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     void exportToText(String parent) {
 
     }
-
 
 
     //在某个position插入录音，并指定是否附加一个文字元素
@@ -2787,7 +2761,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         switch (item.getItemId()) {
             case R.id.menu_top:
                 Log.d(TAG, "onOptionsItemSelected: menu_top");
-                if (this.mEditNote.mTopTime==0) {
+                if (this.mEditNote.mTopTime == 0) {
                     this.mEditNote.mTopTime = System.currentTimeMillis();
                     item.setTitle(R.string.cancel_top);
 
@@ -2882,14 +2856,10 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     }
 
 
-
-
     //是否是编辑模式下
     public boolean isEditMode() {
         return this.mSoftInputShown;
     }
-
-
 
 
     //listCount 好像是文本控件的数量在100以内返回true

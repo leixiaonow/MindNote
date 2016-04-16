@@ -6,6 +6,14 @@
     android:orientation="vertical"
     android:weightSum="1">
 
+    <ListView
+        android:id="@id/label_custom_list"
+        style="@style/ListSelectorEffect"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:divider="@null"
+        android:layout_weight="0.94" />
+
     <top.leixiao.mindnote.widget.NoteLabelAddView
         android:id="@+id/note_label_add_view"
         android:layout_width="fill_parent"
@@ -41,14 +49,6 @@
             android:layout_height="fill_parent" />
     </top.leixiao.mindnote.widget.NoteLabelAddView>
 
-    <ListView
-        android:id="@id/label_custom_list"
-        style="@style/ListSelectorEffect"
-        android:layout_width="fill_parent"
-        android:layout_height="match_parent"
-        android:divider="@null"
-        android:layout_weight="0.94" />
-
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="@dimen/label_selector_dialog_button_height"
@@ -56,6 +56,7 @@
         android:orientation="horizontal">
 
         <TextView
+            android:visibility="gone"
             android:id="@+id/label_select_cancel"
             style="@style/ChickBgEffect"
             android:layout_width="0.0dip"

@@ -154,6 +154,7 @@
     <color name="home_note_item_time_color">#80000000</color>
     <color name="home_note_item_content_color">#80000000</color>
     <color name="abstract_note_activity_layout_head_default_bg">#af967b</color>
+    <color name="toolbar_text_color">#7e652f</color>
 
 
 </resources>

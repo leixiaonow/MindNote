@@ -215,4 +215,5 @@
     <item name="label_custom_list" type="id">false</item>
     <item name="label_custom_list_item_delete" type="id">false</item>
     <item name="label_custom_list_item_text" type="id">false</item>
+    <item name="delete_this_label" type="id">false</item>
 </resources>
