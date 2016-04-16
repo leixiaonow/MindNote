@@ -12,9 +12,11 @@
         app:showAsAction="always" >
         <menu>
             <item android:title="@string/share_pic"
+                  android:id="@+id/share_by_pic"
 
                 />
             <item android:title="@string/share_text"
+                android:id="@+id/share_by_text"
 
                 />
 

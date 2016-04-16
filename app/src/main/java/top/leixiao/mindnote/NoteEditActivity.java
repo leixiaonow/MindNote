@@ -13,11 +13,9 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
@@ -25,7 +23,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.Parcelable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v4.view.ViewCompat;
@@ -180,7 +177,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             }
         }
     };
-    //删除 点击 的监听 deleteImageView调用？？？
+    //删除 点击 的监听 deleteImageView调用
     public OnClickListener mDeleteClickListener = new OnClickListener() {
         public void onClick(View v) {
             View parentView = (View) v.getParent();
@@ -269,26 +266,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     public Handler mUiHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case NoteEditActivity.REQUEST_CODE_PICK /*0*/:
-                    final int type = msg.arg1;
-                    if (type == NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC) {
-//                        MobEventUtil.onSendMobEvent(NoteEditActivity.this, "original_share", null);
-                        NoteEditActivity.this.onShareMenuAction(type);
-                        NoteEditActivity.this.startActivity(Intent.createChooser(NoteEditActivity.this.mShareIntent, NoteEditActivity.this.getString(R.string.share)));
-                        NoteEditActivity.this.mShareIntent = null;
-                        return;
-                    } else if (NoteEditActivity.this.checkSdcardOK()) {
-                        NoteEditActivity.this.popupProgressDialog(R.string.create_sharing);
-                        new Thread(new Runnable() {
-                            public void run() {
-                                NoteEditActivity.this.onShareMenuAction(type);
-                                NoteEditActivity.this.mUiHandler.sendMessageAtTime(NoteEditActivity.this.mHandler.obtainMessage(NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC), 0);
-                            }
-                        }).start();
-                        return;
-                    } else {
-                        return;
-                    }
+
                 case NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC /*1*/:
                     NoteEditActivity.this.dismissProgressDialog();
                     try {
@@ -297,10 +275,6 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                         Log.e(NoteEditActivity.TAG, "ActivityNotFoundException: " + e);
                     }
                     NoteEditActivity.this.mShareIntent = null;
-                    return;
-                case NoteEditActivity.REQUEST_CODE_EXPORT_TO_TEXT /*2*/:
-                    NoteEditActivity.this.dismissProgressDialog();
-                    Toast.makeText(NoteEditActivity.this, R.string.finish_export, Toast.LENGTH_SHORT).show();
                     return;
                 default:
                     return;
@@ -2354,6 +2328,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             View child = this.mEditParent.getChildAt(index);
             //得到孩子View的tag
             String tag = (String) child.getTag();
+//            非录音，录音不考虑
             if (!("record".equals(tag) || "recording".equals(tag))) {
                 //不是录音的情况
                 if (NoteUtil.JSON_TEXT.equals(tag)) {
@@ -2389,7 +2364,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 }
             }
         }
-        //下面是保存为图片，不懂
+        //下面是保存为图片
         view.measure(MeasureSpec.makeMeasureSpec(IMAGE_WIDTH, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(REQUEST_CODE_PICK, REQUEST_CODE_PICK));
         int w = view.getMeasuredWidth();
         int h = view.getMeasuredHeight();
@@ -2422,60 +2397,13 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             this.mShareIntent.putExtra("android.intent.extra.STREAM", Uri.fromFile(file));
             return;
         }
-        int index;
         this.mShareIntent.putExtra("format_txt", true);
-        ArrayList<String> picList = new ArrayList<>();
-        ArrayList<String> recordList = new ArrayList<>();
-        int childCount = this.mEditParent.getChildCount();
-        for (index = 0; index < childCount; index += 1) {
-            NoteItem nt = new NoteItem();
-            View view = this.mEditParent.getChildAt(index);
-            String tag = (String) view.getTag();
-            if ("record".equals(tag)) {
-                recordList.add(((RichFrameLayout) view).getFileName());
-            } else if ("image".equals(tag)) {
-                picList.add(((RichFrameLayout) view).getFileName());
-            }
-        }
-        int picSize = picList.size();
-        int recordSize = recordList.size();
-        int size = picSize + recordSize;
         String txt = exportToString();
         if (txt != null && txt.length() > 0) {
             this.mShareIntent.putExtra("android.intent.extra.TEXT", txt);
         }
-        if (size == 1) {
-            Uri uri;
-            this.mShareIntent.setAction("android.intent.action.SEND");
-            if (picSize == 1) {
-                this.mShareIntent.setType("image/*");
-                uri = Uri.fromFile(NoteUtil.getFile(this.mEditNote.mUUId, (String) picList.get(REQUEST_CODE_PICK)));
-            } else {
-                this.mShareIntent.setType("audio/*");
-                uri = Uri.fromFile(NoteUtil.getFile(this.mEditNote.mUUId, (String) recordList.get(REQUEST_CODE_PICK)));
-            }
-            this.mShareIntent.putExtra("android.intent.extra.STREAM", uri);
-        } else if (size > 1) {
-            this.mShareIntent.setAction("android.intent.action.SEND_MULTIPLE");
-            if (picSize == 0) {
-                this.mShareIntent.setType("audio/*");
-            } else if (recordSize == 0) {
-                this.mShareIntent.setType("image/*");
-            } else {
-                this.mShareIntent.setType("*/*");
-            }
-            ArrayList<Parcelable> parcelableList = new ArrayList();
-            for (index = REQUEST_CODE_PICK; index < picSize; index += REQUEST_CODE_EXPORT_TO_PIC) {
-                parcelableList.add(Uri.fromFile(NoteUtil.getFile(this.mEditNote.mUUId, (String) picList.get(index))));
-            }
-            for (index = REQUEST_CODE_PICK; index < recordSize; index += REQUEST_CODE_EXPORT_TO_PIC) {
-                parcelableList.add(Uri.fromFile(NoteUtil.getFile(this.mEditNote.mUUId, (String) recordList.get(index))));
-            }
-            this.mShareIntent.putParcelableArrayListExtra("android.intent.extra.STREAM", parcelableList);
-        } else {
-            this.mShareIntent.setAction("android.intent.action.SEND");
-            this.mShareIntent.setType("text/plain");
-        }
+        this.mShareIntent.setAction("android.intent.action.SEND");
+        this.mShareIntent.setType("text/plain");
     }
 
     //弹出ProgressDialog
@@ -2533,35 +2461,16 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
             if (lastView.getBottom() < editHeight - this.mEditParent.getPaddingBottom()) {
                 height -= (editHeight - lastView.getBottom()) - 32;
             }
-            if (attachMZFlag) {
-                height += attachHeight;
-            }
             float scale = scaled == 0 ? 1.0F : 0.5f;
             Bitmap src = Bitmap.createBitmap((int) (((float) width) * scale), (int) (((float) height) * scale), Bitmap.Config.ARGB_8888);
-//            src.eraseColor(NoteUtil.getBackgroundColor(this.mEditNote.mPaper));
+            src.eraseColor(NoteUtil.getBackgroundColor(this.mEditNote.mPaper));
             Canvas canvas = new Canvas(src);
             canvas.setDrawFilter(new PaintFlagsDrawFilter(0, 3));
             if (scale != 1.0F) {
                 canvas.scale(scale, scale);
             }
-            if (attachMZFlag) {
-                canvas.save();
-                canvas.clipRect(new Rect(0, 0, width, height - attachHeight));
-            }
             this.mIsCapture = true;
             view.draw(canvas);
-            if (attachMZFlag) {
-                canvas.restore();
-                ImageView divider = (ImageView) this.mScrollView.findViewById(R.id.divider);
-                BitmapDrawable bd = (BitmapDrawable) getResources().getDrawable(R.drawable.divider);
-                canvas.translate((float) ((width - divider.getWidth()) / REQUEST_CODE_EXPORT_TO_TEXT), (float) ((attachHeight > 100 ? attachHeight - 100 : REQUEST_CODE_PICK) + (height - attachHeight)));
-                bd.setBounds(new Rect(REQUEST_CODE_PICK, REQUEST_CODE_PICK, divider.getWidth(), divider.getHeight()));
-                bd.draw(canvas);
-                Paint paint = new Paint(REQUEST_CODE_EXPORT_TO_PIC);
-                paint.setTextSize(40.0f);
-                paint.setColor(ViewCompat.MEASURED_STATE_MASK);
-                canvas.drawText(getResources().getString(R.string.share_tail), 0.0f, 60.0f, paint);
-            }
             ImageUtil.saveBitmap2file(src, file.getPath());
             src.recycle();
             this.mIsCapture = false;
@@ -2571,7 +2480,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
     //导出为pic
     void exportToPic(String parent) {
         File file = new File(parent, NoteUtil.getOutputName("jpg"));
-        exportToPicFile(file, false, 0);
+        exportToPicFile(file, true, 0);
         File parentfile = file.getParentFile();
         if (parentfile.exists()) {
             sendBroadcast(new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE", Uri.fromFile(parentfile)));
@@ -2580,7 +2489,7 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
 
     //导出为String
     String exportToString() {
-        String export = BuildConfig.VERSION_NAME;
+        String export ="";
         int childCount = this.mEditParent.getChildCount();
         if (this.mTitleView.getText() != null && this.mTitleView.getText().length() > 0) {
             export = export + this.mTitleView.getText() + "\n";
@@ -2771,20 +2680,34 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
                 }
                 this.mChanged |= CHANGE_TOP;
                 break;
-            case R.id.menu_share:
-//                if (this.mShareIntent == null) {
-//                    if (checkSdcardOK()) {
-//                        popupProgressDialog(R.string.create_sharing);
-//                        new Thread(new Runnable() {
-//                            public void run() {
-//                                NoteEditActivity.this.onShareMenuAction(0);
-//                                NoteEditActivity.this.mUiHandler.sendMessageAtTime(NoteEditActivity.this.mHandler.obtainMessage(NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC), 0);
-//                            }
-//                        }).start();
-//                        break;
-//                    }
-//                }
+            case R.id.share_by_pic:
+                if (this.mShareIntent == null) {
+                    if (checkSdcardOK()) {
+                        popupProgressDialog(R.string.create_sharing);
+                        new Thread(new Runnable() {
+                            public void run() {
+                                NoteEditActivity.this.onShareMenuAction(0);
+                                NoteEditActivity.this.mUiHandler.sendMessageAtTime(NoteEditActivity.this.mHandler.obtainMessage(NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC), 0);
+                            }
+                        }).start();
+                        break;
+                    }
+                }
                 return true;
+            case R.id.share_by_text:
+                if (this.mShareIntent == null) {
+                    if (checkSdcardOK()) {
+                        popupProgressDialog(R.string.create_sharing);
+                        new Thread(new Runnable() {
+                            public void run() {
+                                NoteEditActivity.this.onShareMenuAction(1);
+                                NoteEditActivity.this.mUiHandler.sendMessageAtTime(NoteEditActivity.this.mHandler.obtainMessage(NoteEditActivity.REQUEST_CODE_EXPORT_TO_PIC), 0);
+                            }
+                        }).start();
+                        break;
+                    }
+                }
+                break;
             case R.id.menu_change_paper:
 //                onBackgroundMenuClick();
                 break;
@@ -2979,6 +2902,4 @@ public class NoteEditActivity extends RecordActivityBase implements OnClickListe
         DrawableCompat.setTintList(tintIcon, ContextCompat.getColorStateList(this, colorsId));
         ((ImageView) findViewById(imageViewId)).setImageDrawable(tintIcon);
     }
-
-
 }
