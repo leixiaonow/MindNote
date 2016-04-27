@@ -103,7 +103,7 @@ public class LabelCustomActivity extends AppCompatActivity implements OnClickLis
     }
 
     private void deleteLabels(int position) {
-        int labelId=getLabelIdByPosition(position);
+            int labelId=getLabelIdByPosition(position);
             Uri labelUri = ContentUris.withAppendedId(this.mLabelUri, labelId);//得到笔记的唯一路径，ContentProvider需要
             this.mResolver.delete(labelUri,null,null);
     }
@@ -296,9 +296,8 @@ public class LabelCustomActivity extends AppCompatActivity implements OnClickLis
     }
 
     private boolean containLabel(String content) {
-        Iterator i$ = ((NoteAppImpl)this.getApplication()).mlabels.iterator();
-        while (i$.hasNext()) {
-            if (TextUtils.equals(((LabelHolder) i$.next()).mContent, content)) {
+        for (LabelHolder mlabel : ((NoteAppImpl) this.getApplication()).mlabels) {
+            if (TextUtils.equals((mlabel).mContent, content)) {
                 return true;
             }
         }

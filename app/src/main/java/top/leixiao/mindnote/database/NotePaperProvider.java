@@ -77,7 +77,7 @@ public class NotePaperProvider extends ContentProvider {
         sUriMatcher.addURI(NotePaper.AUTHORITY, FILES_TABLE_NAME, FILES);
         sUriMatcher.addURI(NotePaper.AUTHORITY, "notefiles/#", FILE_ID);
         sUriMatcher.addURI(NotePaper.AUTHORITY, CATEGORY_TABLE_NAME, CATEGORY);
-        sUriMatcher.addURI(NotePaper.AUTHORITY, "category/#", CATEGORY_ID);
+        sUriMatcher.addURI(NotePaper.AUTHORITY, "categorys/#", CATEGORY_ID);
         sUriMatcher.addURI(NotePaper.AUTHORITY, LABEL_TABLE_NAME, LABEL);
         sUriMatcher.addURI(NotePaper.AUTHORITY, "labels/#", LABEL_ID);
         sUriMatcher.addURI(NotePaper.AUTHORITY, NOTE_LABEL_TABLE_NAME, NOTE_LABEL);

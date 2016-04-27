@@ -313,5 +313,6 @@
     <string name="default_catogery_travl">旅游</string>
     <string name="add_category">添加分类</string>
     <string name="default_catogery">所有笔记</string>
+    <string name="delete_this_category">删除分类</string>
 
 </resources>

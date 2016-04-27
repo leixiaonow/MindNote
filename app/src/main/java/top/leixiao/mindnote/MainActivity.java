@@ -1,12 +1,14 @@
 package top.leixiao.mindnote;
 
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.ActionMode;
@@ -16,6 +18,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -59,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem mMenuSet;
     ListView mDrawerMenuListView;
     View drawerRootView;
+    DrawerLayout mDrawerLayout;
     private String[] mProjection = new String[]{"_id", "name"};
     String mOrderBy="_id";
     ListAdapter mDrawerListAdapter;
@@ -213,33 +218,67 @@ public class MainActivity extends AppCompatActivity {
 
         mDrawerMenuListView=(ListView) findViewById(R.id.left_drawer_listview);
         drawerRootView= findViewById(R.id.left_drawer);
-
+        mDrawerLayout=(DrawerLayout)findViewById(R.id.drawer_layout);
         mDrawerListAdapter=new ListAdapter(this);
         mDrawerMenuListView.setAdapter(mDrawerListAdapter);
         mDrawerMenuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (position==0){
+                    final EditText editText = new EditText(MainActivity.this);
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("请输入分类").setView(
+                            editText)
+                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    String newCategory=editText.getText().toString();
+                                    addCategory(newCategory);
+                                }
+                            })
+                            .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    initCatogeryData();
+                                    mDrawerListAdapter.notifyDataSetChanged();
+                                }
+                            }
+                            ).show();
                     return;
                 }
                 if (position==1){
                     mCategory=-1;
                     initNoteData();
-                    mAdapter.notes=notesData;
-                    updateView();
-                    mAdapter.notifyDataSetChanged();
-                    return;
+                }else {
+                    mCategory=((NoteAppImpl)getApplication()).mCatogetys.get(position).mId;
+                    initNoteDataByCategory(mCategory);
                 }
-                mCategory=((NoteAppImpl)getApplication()).mCatogetys.get(position).mId;
-                initNoteDataByCategory(mCategory);
                 mAdapter.notes=notesData;
                 updateView();
                 mAdapter.notifyDataSetChanged();
+                closeDrawer();
             }
         });
-        mDrawerMenuListView.setSelected(true);
-        mDrawerMenuListView.setSelection(1);
+
+        registerForContextMenu(mDrawerMenuListView);
+
     }
+
+    private void addCategory(String newCategory) {
+        if (newCategory.equals("")||containCategory(newCategory))
+        {
+            mDrawerMenuListView.clearChoices();
+            return;
+        }
+        mDrawerMenuListView.clearChoices();
+        Log.d("MainActivity", "addCategory: newCategory:"+newCategory);
+        ContentValues initialValues=new ContentValues();
+        initialValues.put("name",newCategory);
+        getContentResolver().insert(NotePaper.NoteCategory.CONTENT_URI,initialValues);
+        initCatogeryData();
+        mDrawerListAdapter.notifyDataSetChanged();
+    }
+
     private void initNoteDataByCategory(int category){
 
         this.mCursor = this.getContentResolver().query(NotePaper.Notes.CONTENT_URI, NoteData.NOTES_PROJECTION, "category="+category, null, NotePaper.Notes.DEFAULT_SORT_ORDER);
@@ -378,10 +417,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void updataRecyclor(){
-        isActionMode=false;
-        initNoteDataByCategory(mCategory);
-        updateView();
+        if (isActionMode){
+            isActionMode=false;
+            actionMode.finish();
+        }
+        if (mCategory==-1){
+            initNoteData();
+        }
+        else {
+            initNoteDataByCategory(mCategory);
+        }
         mAdapter.notes=notesData;
+        updateView();
         mAdapter.notifyDataSetChanged();
     }
 
@@ -435,6 +482,8 @@ public class MainActivity extends AppCompatActivity {
                 convertView = mInflater.inflate(R.layout.drawer_list_item_layout, null);
                 holder = new Holder();
                 holder.textView = (TextView)convertView.findViewById(R.id.textView);
+//                convertView.setLongClickable(true);
+//                convertView.setClickable(true);
                 convertView.setTag(holder);
             }else{
                 holder = (Holder)convertView.getTag();
@@ -446,6 +495,55 @@ public class MainActivity extends AppCompatActivity {
 
     static class Holder {
         TextView textView;
+    }
+
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        if (((AdapterView.AdapterContextMenuInfo) menuInfo).position==0||((AdapterView.AdapterContextMenuInfo) menuInfo).position==1){
+            return;
+        }
+        menu.add(Menu.NONE, R.id.delete_this_category,Menu.NONE, R.string.delete_this_category);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.delete_this_category:
+                AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+
+                deleteCategory(info.position);
+
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
+    }
+
+    private void deleteCategory(int position) {
+        CatogeryHolder ch=((NoteAppImpl)this.getApplication()).mCatogetys.get(position);
+//        ((NoteAppImpl)this.getApplication()).mCatogetys.remove(position);
+        Uri categoryUri = ContentUris.withAppendedId(NotePaper.NoteCategory.CONTENT_URI, ch.mId);//得到笔记的唯一路径，ContentProvider需要
+        getContentResolver().delete(categoryUri,null,null);
+        initCatogeryData();
+        mDrawerListAdapter.notifyDataSetChanged();
+    }
+
+    public void closeDrawer() {
+        if (mDrawerLayout.isDrawerOpen(drawerRootView)) {
+            mDrawerLayout.closeDrawer(drawerRootView);
+        }
+    }
+
+    public boolean containCategory(String category){
+        for (CatogeryHolder mCategoryHolder : ((NoteAppImpl) this.getApplication()).mCatogetys) {
+            if (mCategoryHolder.mName.equals(category)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
